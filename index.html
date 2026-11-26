@@ -1,0 +1,24 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>El taller de retratos</title><link rel="stylesheet" href="estilos.css">
+</head><body>
+<div id="taller">
+ <div class="stage">
+  <canvas class="world" width="480" height="270" role="img" aria-label="Galería de arte en la que un pintor camina entre los cuadros y pinta cada foto a pinceladas."></canvas>
+  <div class="hud">
+   <div class="titulo"><small>GALERÍA <span class="room">01</span></small><h1>El taller de retratos</h1></div>
+   <div class="contador"><b>00</b><span>/ 50</span><small>CUADROS</small></div>
+   <div class="cartel"><b>Galería 01</b><span>El taller de retratos</span></div>
+   <div class="barra">
+    <div class="progreso"><i></i></div>
+    <div class="actual"><span class="av"></span><div class="who"><small class="phase">DE CAMINO AL LIENZO</small><div class="fila"><strong class="name">@miso</strong><span class="turn"></span></div></div></div>
+    <div class="prompt">Escribe <b>«yo»</b> y el pintor pintará tu foto<small>🌹 Una Rosa te adelanta en la cola</small></div>
+    <div class="cola"><small>PRÓXIMOS</small><ol class="siguientes"></ol><b class="mas"></b></div>
+   </div>
+   <div class="avisos"></div>
+  </div>
+  <div class="actions"><button class="pause" type="button">Pausar</button><button class="rate" type="button" aria-label="Cambiar velocidad">Velocidad ×1</button></div>
+ </div>
+ <span class="announce" aria-live="polite"></span>
+</div>
+<script src="juego.js"></script>
+</body></html>

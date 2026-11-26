@@ -1,0 +1,94 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Panel · El taller de retratos</title>
+<style>
+ :root{color-scheme:dark}
+ body{margin:0;padding:20px 16px 40px;background:#0f1a18;color:#f1e9d6;font:15px/1.45 'Segoe UI',system-ui,sans-serif}
+ main{max-width:860px;margin:auto;display:grid;gap:16px}
+ h1{margin:0;font:italic 26px Georgia,serif;color:#ffe9b0}
+ h2{margin:0 0 10px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#e7c887}
+ section{padding:16px;border:1px solid #33463f;border-radius:10px;background:#15231f}
+ .fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+ input{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #4a5f56;background:#0c1513;color:inherit;min-width:0}
+ input[type=number]{width:90px}
+ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid #5a6f66;background:#22342f;color:inherit;cursor:pointer}
+ button:hover{background:#2e453e}
+ button.oro{background:#8a601f;border-color:#e6b84c}
+ button.rojo{background:#4a1820;border-color:#a8404e}
+ .dato{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+ .dato div{padding:10px 12px;border-radius:8px;background:#0c1513}
+ .dato b{display:block;font-size:20px;color:#ffdc86;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .dato small{color:#a9b5a9}
+ ol{margin:0;padding:0;list-style:none;max-height:320px;overflow:auto}
+ li{display:grid;grid-template-columns:34px 1fr auto auto;gap:10px;align-items:center;padding:6px 4px;border-bottom:1px solid #263630}
+ li span.n{color:#a9b5a9;font-variant-numeric:tabular-nums}
+ li span.c{color:#ffb3bf;font-variant-numeric:tabular-nums}
+ li button{padding:2px 9px}
+ code{display:block;margin:6px 0 12px;padding:8px 10px;border-radius:8px;background:#0c1513;color:#cfe3d5;font:12.5px/1.5 Consolas,monospace;overflow-wrap:anywhere;user-select:all}
+ #msg{min-height:1.4em;color:#ffb3bf}
+ .vacio{color:#a9b5a9;padding:8px 4px}
+</style></head><body><main>
+ <h1>El taller de retratos · panel</h1>
+
+ <section>
+  <h2>Estado</h2>
+  <div class="dato">
+   <div><small>Galería</small><b id="room">–</b></div>
+   <div><small>Cuadros terminados</small><b id="done">–</b></div>
+   <div><small>Pintando ahora</small><b id="cur">–</b></div>
+   <div><small>En cola</small><b id="len">–</b></div>
+  </div>
+  <p class="fila" style="margin:12px 0 0"><button id="skip" class="rojo">Saltar el cuadro actual</button><span id="msg"></span></p>
+ </section>
+
+ <section>
+  <h2>Simular</h2>
+  <div class="fila">
+   <input id="name" placeholder="Nombre" value="prueba">
+   <button id="yo">Escribe «yo»</button>
+   <input id="coins" type="number" min="1" value="1" aria-label="Monedas">
+   <button id="gift" class="oro">Enviar regalo</button>
+   <button id="test">+5 espectadores de prueba</button>
+  </div>
+ </section>
+
+ <section>
+  <h2>Cola</h2>
+  <ol id="queue"></ol>
+  <p class="fila" style="margin:12px 0 0"><button id="clear">Vaciar la cola</button><button id="reset" class="rojo">Reiniciar todo</button></p>
+ </section>
+
+ <section>
+  <h2>WebHooks para Interactive / TikFinity (método POST)</h2>
+  URL
+  <code id="url"></code>
+  Mensaje de chat
+  <code>{"event":"comment","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","comment":"{comment}"}</code>
+  Cualquier regalo
+  <code>{"event":"gift","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","coins":"{coins}"}</code>
+ </section>
+</main>
+<script>
+ const $=id=>document.getElementById(id),tok=new URLSearchParams(location.search).get('token');
+ const api=body=>fetch('api'+(tok?'?token='+encodeURIComponent(tok):''),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+   .then(r=>r.json()).then(d=>{$('msg').textContent=d.error||'';return d;}).catch(()=>{$('msg').textContent='Sin conexión con el servidor';});
+ $('url').textContent=location.origin+'/webhook';
+ $('yo').onclick=()=>api({action:'comment',name:$('name').value,text:'yo'});
+ $('gift').onclick=()=>api({action:'gift',name:$('name').value,coins:+$('coins').value||1});
+ $('test').onclick=()=>api({action:'test',n:5});
+ $('skip').onclick=()=>api({action:'skip_current'});
+ $('clear').onclick=()=>{if(confirm('¿Vaciar la cola?'))api({action:'clear_queue'});};
+ $('reset').onclick=()=>{if(confirm('¿Borrar la cola y todos los cuadros?'))api({action:'reset_all'});};
+ new EventSource('events').onmessage=e=>{
+   const s=JSON.parse(e.data),name=u=>(s.users[u]||{}).name||u;
+   $('room').textContent=s.room;$('done').textContent=s.gallery.length+' / '+s.total;$('len').textContent=s.queueLen;
+   $('cur').textContent=s.current?name(s.current.uid)+(s.current.coins?' · '+s.current.coins:''):'nadie';
+   const ol=$('queue');ol.textContent='';
+   if(!s.queue.length){const p=document.createElement('p');p.className='vacio';p.textContent='Nadie en la cola.';ol.appendChild(p);}
+   s.queue.forEach((q,i)=>{
+     const li=document.createElement('li'),mk=(c,t)=>{const x=document.createElement('span');x.className=c;x.textContent=t;return x;},b=document.createElement('button');
+     b.textContent='✕';b.title='Quitar de la cola';b.onclick=()=>api({action:'remove',uid:q.uid});
+     li.append(mk('n',i+1),mk('',name(q.uid)+'  @'+q.uid),mk('c',q.coins?'🌹 '+q.coins:''),b);ol.appendChild(li);
+   });
+ };
+</script>
+</body></html>
