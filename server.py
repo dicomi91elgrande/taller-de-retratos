@@ -34,6 +34,7 @@ HOOK_TOKEN = os.environ.get('HOOK_TOKEN')      # opcional: protege /webhook y /a
 BASE = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = os.path.join(BASE, 'state.json')
 
+BOOT = str(int(time.time()))   # cambia en cada arranque: el juego y el panel se recargan solos al verlo
 TOTAL = 50               # cuadros por galería
 MAX_QUEUE = 800
 
@@ -105,7 +106,7 @@ def view():
     if state['current']:
         uids.add(state['current']['uid'])
     return {
-        'v': state['v'], 'room': state['room'], 'total': TOTAL,
+        'v': state['v'], 'boot': BOOT, 'room': state['room'], 'total': TOTAL,
         'gallery': state['gallery'], 'current': state['current'],
         'queue': q, 'queueLen': len(state['queue']),
         'users': {u: state['users'].get(u, {'name': u}) for u in uids if u},

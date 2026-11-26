@@ -81,6 +81,8 @@
  $('reset').onclick=()=>{if(confirm('¿Borrar la cola y todos los cuadros?'))api({action:'reset_all'});};
  new EventSource('events').onmessage=e=>{
    const s=JSON.parse(e.data),name=u=>(s.users[u]||{}).name||u;
+   if(window.boot&&s.boot&&s.boot!==window.boot){location.reload();return;}
+   window.boot=s.boot;
    $('room').textContent=s.room;$('done').textContent=s.gallery.length+' / '+s.total;$('len').textContent=s.queueLen;
    $('cur').textContent=s.current?name(s.current.uid)+(s.current.coins?' · '+s.current.coins:''):'nadie';
    const ol=$('queue');ol.textContent='';

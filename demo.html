@@ -587,6 +587,8 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
  function onState(s){
    const fromGallery=()=>s.gallery.map(g=>({id:g.id,coins:g.coins,gifts:g.gifts,p:person(g.uid,s.users[g.uid])}));
    if(!srv){srv=s;mode='live';room=s.room;lastEv=s.events.reduce((m,e)=>Math.max(m,e.id),0);begin(fromGallery());return;}
+   // Servidor reiniciado (por ejemplo, tras subir cambios): recargar para no quedarse con código viejo.
+   if(s.boot&&srv.boot&&s.boot!==srv.boot){location.reload();return;}
    srv=s;
    // Reinicio desde el panel: la galería del servidor va por detrás de la nuestra.
    if(s.room<room||(s.room===room&&s.gallery.length<finished.filter(Boolean).length)){room=s.room;begin(fromGallery());return;}
