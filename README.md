@@ -11,11 +11,15 @@ Videojuego 2D en pixel art pensado para emitir en **horizontal (16:9)** en TikTo
 
 **Modo demo, sin servidor:** abre `demo.html` con doble clic. Usa participantes de muestra. También puedes forzarlo con `http://localhost:3220/?demo`.
 
+### En internet (Render)
+
+Desplegado en **https://taller-de-retratos.onrender.com** (panel en `/panel`, webhook en `/webhook`, diagnóstico en `/debug`). Repositorio `dicomi91elgrande/taller-de-retratos`, rama `main`, con despliegue automático en cada `git push`. El plan gratuito duerme tras 15 minutos sin uso y tarda cerca de un minuto en despertar; cada redespliegue o reinicio borra la cola y la galería, así que no subas cambios durante un directo.
+
 ### Conexión con TikTok (Interactive / TikFinity)
 
 Misma arquitectura que Conquista Mundial: Interactive → `POST /webhook` → `server.py` → el juego (SSE).
 
-En Interactive, el perfil **«pintar»** ya tiene dos acciones WebHook (`Taller chat` y `Taller regalo`) apuntando a `http://127.0.0.1:3220/webhook`, y dos eventos que las disparan: «Chat (global)» y «Gift (mínimo coins: 1)». Los cuerpos son:
+En Interactive, el perfil **«pintar»** ya tiene dos acciones WebHook (`Taller chat` y `Taller regalo`) apuntando a `https://taller-de-retratos.onrender.com/webhook`, y dos eventos que las disparan: «Chat (global)» y «Gift (mínimo coins: 1)». Los cuerpos son:
 
 ```
 {"event":"comment","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","comment":"{comment}"}
@@ -106,7 +110,6 @@ Cada cuadro guarda una ficha `{id, coins, p}` en `assigned[i]`; `p` es la person
 
 ## Qué falta
 
-- **Desplegar en internet** si quieres usarlo como fuente de navegador en TikTok LIVE Studio (no acepta `localhost`). Mientras tanto se puede capturar la ventana del navegador.
 - Ajustar los umbrales de los marcos con regalos reales.
 - Quitar un cuadro ya terminado de la pared (hoy solo se puede saltar el que se está pintando).
 
