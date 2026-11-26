@@ -64,6 +64,12 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 #taller .avisos .gift{border-color:#ff9aa8;background:#3a1019f0;color:#ffe3e8;font-weight:600}
 @keyframes aviso{0%{opacity:0;transform:translateX(3cqw)}8%,85%{opacity:1;transform:none}100%{opacity:0}}
 
+/* Cuadro gigante del ganador: se oculta el HUD de la galería y aparece el rótulo del campeón */
+#taller .titulo,#taller .contador,#taller .barra,#taller .avisos{transition:opacity .6s}
+#taller .stage.mural .titulo,#taller .stage.mural .contador,#taller .stage.mural .barra,#taller .stage.mural .avisos{opacity:0}
+#taller .campeon{position:absolute;left:50%;bottom:2.2%;transform:translateX(-50%);padding:.5cqw 2cqw;border-radius:2cqw;white-space:nowrap;font:italic 1.9cqw Georgia,serif;color:#ffe9b0;background:#0b0f17e6;border:.14cqw solid #e6b84c;box-shadow:0 0 1.6cqw #ffb84a66;opacity:0;transition:opacity .8s}
+#taller .campeon.ver{opacity:1}
+
 /* Cartel de cambio de galería */
 #taller .cartel{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.94);display:grid;justify-items:center;gap:.6cqw;padding:1.6cqw 5cqw;border-block:.2cqw solid #e6b84c;background:linear-gradient(90deg,#0000,#070b0dd9 22%,#070b0dd9 78%,#0000);opacity:0;transition:opacity .7s,transform .7s}
 #taller .cartel.ver{opacity:1;transform:translate(-50%,-50%)}

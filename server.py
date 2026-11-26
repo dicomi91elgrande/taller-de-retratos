@@ -43,6 +43,7 @@ FILES = {
     '/index.html': ('index.html', 'text/html; charset=utf-8'),
     '/panel': ('panel.html', 'text/html; charset=utf-8'),
     '/cola': ('cola.html', 'text/html; charset=utf-8'),
+    '/batalla': ('batalla.html', 'text/html; charset=utf-8'),
     '/estilos.css': ('estilos.css', 'text/css; charset=utf-8'),
     '/juego.js': ('juego.js', 'text/javascript; charset=utf-8'),
     '/assets/retratos.jpg': ('assets/retratos.jpg', 'image/jpeg'),
@@ -69,6 +70,11 @@ def default_state():
         'current': None,    # {id, uid, coins}   quien se está pintando
         'gallery': [],      # [{id, uid, coins}] cuadros terminados de la galería actual
         'events': [],       # últimos avisos para el juego y el panel
+        'battle': None,     # {n, startAt, endsAt, totals: {uid: {c, t}}}  batalla de donadores en curso
+        'battleN': 0,
+        'murals': [],       # [{id, uid, coins, n}] cuadros gigantes pendientes de pintar (ganadores)
+        'champions': [],    # últimos ganadores ya pintados
+        'config': {'battleSeconds': 180},
     }
 
 
@@ -106,7 +112,16 @@ def view():
     uids = {e['uid'] for e in q} | {g['uid'] for g in state['gallery']} | {e.get('uid') for e in state['events']}
     if state['current']:
         uids.add(state['current']['uid'])
+    b, battle = state['battle'], None
+    if b:
+        rank = battle_rank(b)
+        battle = {'n': b['n'], 'startAt': b['startAt'], 'endsAt': b['endsAt'], 'count': len(rank),
+                  'top': [{'uid': u, 'coins': d['c']} for u, d in rank[:3]]}
+        uids |= {u for u, _ in rank[:3]}
+    uids |= {m['uid'] for m in state['murals']} | {m['uid'] for m in state['champions']}
     return {
+        'now': ms(), 'battle': battle, 'mural': state['murals'][0] if state['murals'] else None,
+        'champions': state['champions'], 'battleSeconds': state['config'].get('battleSeconds', 180),
         'v': state['v'], 'boot': BOOT, 'room': state['room'], 'total': TOTAL,
         'gallery': state['gallery'], 'current': state['current'],
         'queue': q, 'queueLen': len(state['queue']),
@@ -196,6 +211,52 @@ def uid_from_name(name):
     return norm_uid(name, name)
 
 
+# ---------------------------------------------------------------- batalla de donadores
+GRACE_MS = 3000          # margen oculto al acabar el reloj (regalos con retraso)
+
+
+def battle_rank(b):
+    """Más monedas primero; en empate, quien llegó antes a esa cifra."""
+    return sorted(b['totals'].items(), key=lambda kv: (-kv[1]['c'], kv[1]['t']))
+
+
+def battle_add(uid, coins):
+    b = state['battle']
+    if not b or ms() > b['endsAt'] + GRACE_MS:      # sin batalla o con el reloj a cero: no cuenta
+        return
+    state['seq'] += 1
+    d = b['totals'].setdefault(uid, {'c': 0, 't': 0})
+    d['c'] += coins
+    d['t'] = state['seq']
+
+
+def battle_button():
+    """El botón: cierra la batalla (el ganador se lleva el cuadro gigante) y empieza la siguiente."""
+    b = state['battle']
+    if b:
+        rank = battle_rank(b)
+        if rank:
+            uid, d = rank[0]
+            state['seq'] += 1
+            state['murals'].append({'id': state['seq'], 'uid': uid, 'coins': d['c'], 'n': b['n']})
+            del state['murals'][:-3]
+            ev('battle_end', uid=uid, coins=d['c'], n=b['n'])
+        else:
+            ev('info', text='Batalla %d sin regalos: no hay cuadro gigante' % b['n'])
+    state['battleN'] += 1
+    now = ms()
+    secs = min(3600, max(10, int(state['config'].get('battleSeconds', 180))))
+    state['battle'] = {'n': state['battleN'], 'startAt': now, 'endsAt': now + secs * 1000, 'totals': {}}
+    changed()
+
+
+def mural_done(mid):
+    if state['murals'] and state['murals'][0]['id'] == mid:
+        state['champions'].append(state['murals'].pop(0))
+        del state['champions'][:-5]
+        changed()
+
+
 # ---------------------------------------------------------------- cola
 def sort_queue():
     state['queue'].sort(key=lambda e: (-e['coins'], e['n']))
@@ -283,6 +344,7 @@ def add_gift(uid, name, img, coins, gift=None, n=1):
     if coins <= 0:
         return 'sin monedas'
     touch_user(uid, name, img)
+    battle_add(uid, coins)                 # el mismo regalo cuenta para la cola y para la batalla
     info = {'gift': gift['name'] if gift else 'Regalo', 'img': gift['img'] if gift else '', 'n': n}
     cur = state['current']
     if cur and cur['uid'] == uid:
@@ -324,7 +386,8 @@ def finish(pid):
     if len(state['gallery']) >= TOTAL:        # galería completa: empieza la siguiente
         state['room'] += 1
         state['gallery'] = []
-        keep = {e['uid'] for e in state['queue']}
+        keep = {e['uid'] for e in state['queue']} | {m['uid'] for m in state['murals'] + state['champions']}
+        keep |= set(state['battle']['totals']) if state['battle'] else set()
         state['users'] = {u: d for u, d in state['users'].items() if u in keep}
     changed()
 
@@ -372,6 +435,16 @@ def api_action(a, d):
                 add_gift(uid, name, img, ((gift and gift['unit']) or 1) * n, gift, n)
             else:
                 join(uid, name, img)
+    elif a == 'battle':
+        battle_button()
+    elif a == 'battle_stop':
+        state['battle'] = None
+        changed()
+    elif a == 'mural_done':
+        mural_done(d.get('id'))
+    elif a == 'config':
+        state['config']['battleSeconds'] = min(3600, max(10, int(d.get('battleSeconds') or 180)))
+        changed()
     elif a == 'remove':
         state['queue'] = [e for e in state['queue'] if e['uid'] != d.get('uid')]
         changed()
@@ -467,6 +540,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path in FILES:
             self.serve_file(*FILES[path])
+        elif path.startswith('/do/'):
+            self.quick_action(path[4:])
         elif path == '/events':
             self.handle_sse()
         elif path == '/webhook':
@@ -481,6 +556,20 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
             self.wfile.write(b'404')
+
+    def quick_action(self, name):
+        """Acciones por dirección (GET), para atajos de teclado y botones de Stream Deck."""
+        q = parse_qs(urlparse(self.path).query)
+        if HOOK_TOKEN and q.get('token', [''])[0] != HOOK_TOKEN:
+            self.send_json({'ok': False, 'error': 'token'}, 403)
+            return
+        actions = {'batalla': 'battle', 'parar': 'battle_stop', 'saltar': 'skip_current'}
+        if name not in actions:
+            self.send_json({'ok': False, 'error': 'Acción desconocida', 'acciones': sorted(actions)}, 404)
+            return
+        with lock:
+            err, _ = api_action(actions[name], {})
+        self.send_json({'ok': not err, 'error': err, 'accion': name})
 
     def serve_file(self, rel, ctype):
         with open(os.path.join(BASE, rel), 'rb') as f:

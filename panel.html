@@ -41,6 +41,22 @@
  </section>
 
  <section>
+  <h2>Batalla de donadores</h2>
+  <div class="dato">
+   <div><small>Batalla</small><b id="bn">–</b></div>
+   <div><small>Reloj</small><b id="bt">–</b></div>
+   <div><small>1º</small><b id="b1">–</b></div>
+   <div><small>2º</small><b id="b2">–</b></div>
+  </div>
+  <p class="fila" style="margin:12px 0 0">
+   <button id="bgo" class="oro">Empezar batalla</button>
+   <button id="bstop">Parar las batallas</button>
+   <label>Duración <input id="bsecs" type="number" min="10" step="10" value="180"> s</label><button id="bsave">Guardar</button>
+  </p>
+  <p style="margin:10px 0 0;color:#a9b5a9">El botón dorado cierra la batalla (el 1º se lleva el cuadro gigante) y empieza la siguiente. Para un atajo o Stream Deck: <code id="burl" style="display:inline;padding:2px 6px"></code></p>
+ </section>
+
+ <section>
   <h2>Simular</h2>
   <div class="fila">
    <input id="name" placeholder="Nombre" value="prueba">
@@ -77,12 +93,28 @@
  $('gift').onclick=()=>api({action:'gift',name:$('name').value,giftname:$('giftname').value,n:+$('coins').value||1});
  $('test').onclick=()=>api({action:'test',n:5});
  $('skip').onclick=()=>api({action:'skip_current'});
+ $('burl').textContent=location.origin+'/do/batalla';
+ $('bgo').onclick=()=>api({action:'battle'});
+ $('bstop').onclick=()=>api({action:'battle_stop'});
+ $('bsave').onclick=()=>api({action:'config',battleSeconds:+$('bsecs').value||180});
+ let last=null,off=0;
+ function battle(){
+   if(!last)return;const b=last.battle,name=u=>(last.users[u]||{}).name||u;
+   const left=b?Math.ceil((b.endsAt-(Date.now()+off))/1000):0;
+   $('bn').textContent=b?'Nº '+b.n:'parada';
+   $('bt').textContent=!b?'–':left<=0?'¡Tiempo!':Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
+   $('b1').textContent=b&&b.top[0]?name(b.top[0].uid)+' · '+b.top[0].coins:'–';
+   $('b2').textContent=b&&b.top[1]?name(b.top[1].uid)+' · '+b.top[1].coins:'–';
+   $('bgo').textContent=!b?'Empezar batalla':b.top[0]?'Terminar: pintar a '+name(b.top[0].uid)+' y empezar otra':'Reiniciar batalla (nadie ha regalado)';
+ }
+ setInterval(battle,500);
  $('clear').onclick=()=>{if(confirm('¿Vaciar la cola?'))api({action:'clear_queue'});};
  $('reset').onclick=()=>{if(confirm('¿Borrar la cola y todos los cuadros?'))api({action:'reset_all'});};
  new EventSource('events').onmessage=e=>{
    const s=JSON.parse(e.data),name=u=>(s.users[u]||{}).name||u;
    if(window.boot&&s.boot&&s.boot!==window.boot){location.reload();return;}
    window.boot=s.boot;
+   if(!last)$('bsecs').value=s.battleSeconds;last=s;off=s.now-Date.now();battle();
    $('room').textContent=s.room;$('done').textContent=s.gallery.length+' / '+s.total;$('len').textContent=s.queueLen;
    $('cur').textContent=s.current?name(s.current.uid)+(s.current.coins?' · '+s.current.coins:''):'nadie';
    const ol=$('queue');ol.textContent='';

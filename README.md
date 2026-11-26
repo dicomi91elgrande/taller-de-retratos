@@ -56,6 +56,26 @@ Los botones solo aparecen al pasar el ratón por encima o en pausa, para que no 
 - **V**: cambiar la velocidad entre ×1, ×2 y ×4 (se recuerda).
 - Si el navegador tiene activado el movimiento reducido, el juego arranca en pausa.
 
+## Widgets para TikTok LIVE Studio
+
+Son páginas aparte, con fondo transparente, que se añaden como fuente de enlace y se ponen al tamaño que quieras. Añade `?fondo=1` para verlas con fondo oscuro en un navegador.
+
+| Dirección | Qué muestra | Tamaño recomendado |
+| --- | --- | --- |
+| `/cola` | Quién se está pintando y los 8 siguientes, con foto, nombre e icono y cantidad de cada regalo. `?n=12` cambia cuántos se ven. | 420 × 900 |
+| `/batalla` | Top 1 contra top 2 de donadores, con reloj, barra y el 3º. | 900 × 300 |
+
+## Batalla de donadores y cuadro gigante
+
+- Durante la batalla (3 minutos por defecto), cada regalo suma para la batalla además de para la cola.
+- Al llegar el reloj a cero la batalla se congela y espera. No pasa nada hasta que pulses el botón.
+- **El botón** cierra la batalla y empieza la siguiente. Si alguien regaló, el 1º se lleva el cuadro gigante; en empate gana quien llegó antes a esa cifra; si nadie regaló, solo se reinicia.
+- El botón está en el panel y en la dirección `/do/batalla` (para un atajo o Stream Deck). `/do/parar` detiene las batallas.
+- **Cuadro gigante**: en ese momento la galería se congela tal cual, el pintor sube en una góndola por la fachada del rascacielos y pinta la foto del ganador en una lona de 168 × 168 píxeles, con focos y fuegos artificiales. Dura unos 25 segundos y después la galería sigue donde estaba. El ganador conserva su turno normal en la cola.
+- En modo demo, la tecla **B** lanza un cuadro gigante de prueba.
+
+En el código: `battle_button()` y `battle_add()` en `server.py`; `startMural()`, `updateMural()` y `drawMural()` en `juego.js`.
+
 ## Qué quiere el creador
 
 - Quien escribe «yo» en el chat pide que el pintor pinte su foto de perfil.
