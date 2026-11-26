@@ -128,6 +128,7 @@
  function makePic(img,sx,sy,sw,sh,Z=72,clean=false){
    {
      const S=Z,big=mk(S*2,S*2),b=big.getContext('2d');b.imageSmoothingQuality='high';
+     b.fillStyle='#1c1f26';b.fillRect(0,0,S*2,S*2);     // fondo opaco: hay avatares con transparencia
      b.drawImage(img,sx,sy,sw,sh,0,0,S*2,S*2);
      const fin=mk(S,S),f=fin.getContext('2d');f.imageSmoothingQuality='high';f.drawImage(big,0,0,S,S);
      if(!clean)try{
