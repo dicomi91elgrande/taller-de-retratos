@@ -42,6 +42,7 @@ FILES = {
     '/': ('index.html', 'text/html; charset=utf-8'),
     '/index.html': ('index.html', 'text/html; charset=utf-8'),
     '/panel': ('panel.html', 'text/html; charset=utf-8'),
+    '/cola': ('cola.html', 'text/html; charset=utf-8'),
     '/estilos.css': ('estilos.css', 'text/css; charset=utf-8'),
     '/juego.js': ('juego.js', 'text/javascript; charset=utf-8'),
     '/assets/retratos.jpg': ('assets/retratos.jpg', 'image/jpeg'),
