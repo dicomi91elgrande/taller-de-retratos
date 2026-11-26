@@ -120,11 +120,33 @@ def broadcast():
             q.put(data)
 
 
+pending = {'send': False, 'save': False}
+SEND_EVERY = 0.15        # como mucho un aviso a juego y panel cada 150 ms
+SAVE_EVERY = 2.0         # y una escritura de state.json cada 2 s
+
+
 def changed():
-    """Llamar (con el lock cogido) tras cualquier cambio de estado."""
+    """Llamar (con el lock cogido) tras cualquier cambio de estado.
+
+    No escribe ni difunde al momento: con cientos de mensajes por minuto, hacerlo en cada uno
+    ahogaba el servidor. Lo hace `flusher`, agrupando los cambios.
+    """
     state['v'] += 1
-    save_state()
-    broadcast()
+    pending['send'] = pending['save'] = True
+
+
+def flusher():
+    last_save = 0
+    while True:
+        time.sleep(SEND_EVERY)
+        with lock:
+            if pending['send']:
+                pending['send'] = False
+                broadcast()
+            if pending['save'] and time.time() - last_save >= SAVE_EVERY:
+                pending['save'] = False
+                last_save = time.time()
+                save_state()
 
 
 def ev(kind, **kw):
@@ -541,6 +563,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     load_state()
+    threading.Thread(target=flusher, daemon=True).start()
     log('=' * 60)
     log(' EL TALLER DE RETRATOS')
     log(f' Juego   : http://localhost:{PORT}/')
