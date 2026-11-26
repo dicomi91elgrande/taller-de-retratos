@@ -109,7 +109,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    <div class="avisos"></div>
    <div class="campeon"></div>
   </div>
-  <div class="actions"><button class="pause" type="button">Pausar</button><button class="rate" type="button" aria-label="Cambiar velocidad">Velocidad ×1</button></div>
+  <div class="actions"><button class="pause" type="button">Pausar</button><button class="rate" type="button" aria-label="Cambiar velocidad">Velocidad ×1</button><button class="sonido" type="button">Música: sí</button></div>
  </div>
  <span class="announce" aria-live="polite"></span>
 </div>
@@ -675,7 +675,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    q('.cartel').classList.add('ver');
  }
  function endMural(){
-   const m=mural;mural=null;lastMural=m.rec.id;veil=1;stage.classList.remove('mural');q('.campeon').classList.remove('ver');
+   const m=mural;mural=null;lastMural=m.rec.id;veil=1;music.mood('galeria');stage.classList.remove('mural');q('.campeon').classList.remove('ver');
    q('.cartel').classList.remove('ver');q('.cartel b').textContent='Galería '+String(room).padStart(2,'0');q('.cartel span').textContent='El taller de retratos';
    if(mode==='live')api({action:'mural_done',id:m.rec.id}).catch(()=>{});
  }
@@ -684,7 +684,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    if(m.stage==='intro'){
      veil=Math.min(1,veil+dt*1.8);
      if(m.t>2.2&&(m.p.ready||m.t>7)){
-       m.big=makePic(...picOf(m.p).src,LZ,true);m.stage='rise';m.t=0;     // la foto original, a 672 px y sin degradar
+       m.big=makePic(...picOf(m.p).src,LZ,true);m.stage='rise';m.t=0;music.mood('super');     // la foto original, a 672 px y sin degradar
        stage.classList.add('mural');q('.cartel').classList.remove('ver');
        q('.campeon').textContent='🏆 '+m.p.name+' · SUPER CUADRO'+(m.rec.n?' Nº '+m.rec.n:'')+' · '+m.rec.coins+' monedas';q('.campeon').classList.add('ver');
      }
@@ -781,6 +781,54 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
    g=g0;G=g0;
  }
 
+ // ───────── Música ambiente ─────────
+ // Se genera con WebAudio (sin archivos): un vals tranquilo en la galería y, durante el súper cuadro, la misma
+ // pieza más rápida, más aguda y con más melodía. Al ser original no da problemas de derechos en el directo.
+ //   ?musica=0 en la dirección la desactiva;  ?vol=30 fija el volumen (0–100).
+ const music=(()=>{
+   const P=new URLSearchParams(location.search);
+   let ac=null,master,rev,on=P.get('musica')!=='0',mood='galeria',next=0,bar=0,mel=5;
+   const vol=clamp((+P.get('vol')||45)/100,0,1);
+   try{const v=localStorage.getItem('taller-musica');if(v!==null&&P.get('musica')===null)on=v==='1';}catch(e){}
+   const hz=m=>440*Math.pow(2,(m-69)/12);
+   const PROG=[[48,[64,67,71]],[45,[64,67,72]],[41,[65,69,72]],[43,[62,65,71]],[48,[64,67,72]],[52,[64,67,71]],[41,[65,69,72]],[43,[62,67,71]]];   // [bajo, acorde]
+   const SCALE=[60,62,64,67,69,72,74,76,79,81,84];
+   function note(m,t,dur,gain,type){
+     const o=ac.createOscillator(),o2=ac.createOscillator(),a=ac.createGain(),a2=ac.createGain(),f=ac.createBiquadFilter();
+     o.type=type||'triangle';o.frequency.value=hz(m);o2.type='sine';o2.frequency.value=hz(m)*2.001;a2.gain.value=.25;
+     f.type='lowpass';f.frequency.setValueAtTime(2600,t);f.frequency.exponentialRampToValueAtTime(700,t+dur);
+     a.gain.setValueAtTime(0,t);a.gain.linearRampToValueAtTime(gain,t+.012);a.gain.exponentialRampToValueAtTime(.0008,t+dur);
+     o.connect(f);o2.connect(a2);a2.connect(f);f.connect(a);a.connect(master);a.connect(rev);
+     o.start(t);o2.start(t);o.stop(t+dur+.05);o2.stop(t+dur+.05);
+   }
+   function schedule(){
+     if(!ac||!on||ac.state!=='running')return;
+     const fast=mood==='super',beat=fast?.36:.52,tr=fast?5:0;
+     if(next<ac.currentTime)next=ac.currentTime+.1;
+     while(next<ac.currentTime+1.6){
+       const [b,ch]=PROG[bar%PROG.length],t=next;
+       note(b+tr,t,beat*2.8,.2,'sine');note(b+12+tr,t,beat*2,.06);                          // bajo en el primer tiempo
+       for(const k of [1,2])ch.forEach((m,i)=>note(m+tr,t+beat*k+i*.012,beat*1.4,.045));     // acorde en el 2 y el 3
+       for(let k=0;k<3;k++)if(rnd()<(fast?.85:.6)){                                          // melodía: paseo por la escala
+         mel=clamp(mel+Math.floor(rnd()*5)-2,0,SCALE.length-1);note(SCALE[mel]+12+tr,t+beat*k+(rnd()<.3?beat/2:0),beat*2.2,.07);}
+       next+=beat*3;bar++;
+     }
+   }
+   function start(){
+     if(ac)return;
+     try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+     master=ac.createGain();master.gain.value=on?vol:0;const comp=ac.createDynamicsCompressor();master.connect(comp);comp.connect(ac.destination);
+     const len=Math.floor(ac.sampleRate*2.6),buf=ac.createBuffer(2,len,ac.sampleRate);                // reverberación de sala
+     for(let c=0;c<2;c++){const d=buf.getChannelData(c);for(let i=0;i<len;i++)d[i]=(rnd()*2-1)*Math.pow(1-i/len,2.6);}
+     const cv=ac.createConvolver();cv.buffer=buf;rev=ac.createGain();rev.gain.value=.5;rev.connect(cv);cv.connect(master);
+     setInterval(schedule,250);
+     // Los navegadores normales no dejan sonar nada hasta la primera pulsación; las fuentes de directo sí.
+     const wake=()=>{if(ac.state==='suspended')ac.resume();};addEventListener('pointerdown',wake);addEventListener('keydown',wake);
+   }
+   return {start,get on(){return on;},get blocked(){return !!ac&&ac.state==='suspended';},mood(m){mood=m;},
+     toggle(){on=!on;try{localStorage.setItem('taller-musica',on?'1':'0');}catch(e){}if(ac)master.gain.setTargetAtTime(on?vol:0,ac.currentTime,.25);}};
+ })();
+
  // ───────── Interfaz ─────────
  const setAv=(el,p)=>{el.style.backgroundImage=p&&p.hud?`url("${p.hud}")`:'none';};
  const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
@@ -815,6 +863,7 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
    q('.mas').textContent=count>4?'+'+(count-4):'';q('.cola').classList.toggle('vacia',!next.length);
    stage.classList.toggle('paused',paused);
    q('.pause').textContent=paused?'Continuar':'Pausar';q('.rate').textContent='Velocidad ×'+speed;
+   q('.sonido').textContent=!music.on?'Música: no':music.blocked?'Música: pulsa para activar':'Música: sí';
  }
  function change(s){phase=s;t=0;ui();q('.announce').textContent=q('.phase').textContent+' · '+q('.name').textContent;}
  // Empieza una galería. Con `restore` recupera los cuadros ya terminados (recarga de la página).
@@ -942,13 +991,15 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
  const save=()=>{try{localStorage.setItem('taller-velocidad',speed);}catch(e){}};
  const togglePause=()=>{paused=!paused;ui();},nextSpeed=()=>{speed=speed===1?2:speed===2?4:1;ui();save();};
  q('.pause').onclick=togglePause;q('.rate').onclick=nextSpeed;
+ q('.sonido').onclick=()=>{if(!music.blocked)music.toggle();setTimeout(ui,150);};
  addEventListener('keydown',e=>{
    if(e.target.tagName==='BUTTON')return;
    if(e.code==='Space'){e.preventDefault();togglePause();}else if(e.key==='v'||e.key==='V')nextSpeed();
+   else if(e.key==='m'||e.key==='M'){music.toggle();ui();}
    else if((e.key==='b'||e.key==='B')&&mode==='demo'){const a=actors[Math.floor(rnd()*actors.length)];startMural({id:Date.now(),uid:a[0].slice(1),coins:500,n:1},{name:a[0],img:'demo:'+a[2]});}
  });
  atlas.onload=()=>{
-   buildStatic();buildCity();const n=atlas.naturalWidth/2;
+   buildStatic();buildCity();music.start();const n=atlas.naturalWidth/2;
    atlasPics=[0,1,2,3].map(i=>makePic(atlas,(i%2)*n,Math.floor(i/2)*n,n,n,PZ,true));atlasPics.forEach(pc=>{pc.hud=hudOf(pc.final);});
    try{const v=+localStorage.getItem('taller-velocidad');if([1,2,4].includes(v))speed=v;}catch(e){}
    paused=matchMedia('(prefers-reduced-motion: reduce)').matches;

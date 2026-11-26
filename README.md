@@ -54,6 +54,7 @@ Los botones solo aparecen al pasar el ratón por encima o en pausa, para que no 
 
 - **Espacio**: pausar o continuar.
 - **V**: cambiar la velocidad entre ×1, ×2 y ×4 (se recuerda).
+- **M**: activar o quitar la música (se recuerda). La música se genera con WebAudio, sin archivos: un vals tranquilo en la galería y una versión más viva durante el súper cuadro. `?musica=0` en la dirección la desactiva y `?vol=30` fija el volumen (0–100; por defecto 45). En un navegador normal no suena hasta la primera pulsación.
 - Si el navegador tiene activado el movimiento reducido, el juego arranca en pausa.
 
 ## Widgets para TikTok LIVE Studio
