@@ -8,7 +8,8 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 #taller{width:min(100vw,calc(100vh*16/9));font-family:'Segoe UI',system-ui,sans-serif;color:#fff3d6}
 #taller *{box-sizing:border-box}
 #taller .stage{position:relative;aspect-ratio:16/9;container-type:inline-size;overflow:hidden;background:#0a1413}
-#taller .world{position:absolute;inset:0;display:block;width:100%;height:100%;image-rendering:pixelated}
+#taller .world,#taller .frente{position:absolute;inset:0;display:block;width:100%;height:100%;image-rendering:pixelated}
+#taller .fotos{position:absolute;inset:0;display:block;width:100%;height:100%}
 /* Lienzo en alta resolución del súper cuadro: solo se ve durante esa escena */
 #taller .hd{position:absolute;inset:0;display:block;width:100%;height:100%;visibility:hidden}
 #taller .stage.mural .hd{visibility:visible}
@@ -92,6 +93,8 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 <div id="taller">
  <div class="stage">
   <canvas class="world" width="480" height="270" role="img" aria-label="Galería de arte en la que un pintor camina entre los cuadros y pinta cada foto a pinceladas."></canvas>
+  <canvas class="fotos" width="1920" height="1080" aria-hidden="true"></canvas>
+  <canvas class="frente" width="480" height="270" aria-hidden="true"></canvas>
   <canvas class="hd" width="1920" height="1080" aria-hidden="true"></canvas>
   <div class="hud">
    <div class="titulo"><small>GALERÍA <span class="room">01</span></small><h1>El taller de retratos</h1></div>
@@ -119,6 +122,11 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 
  // ───────── Medidas del mundo (píxeles del lienzo de 480 × 270) ─────────
  const W=480,H=270,S=72,STEP=170,TOP=80,FLOOR=206,FEET=226,TOTAL=50,FOCUS=240,REACH=36;
+ // Tres capas: el mundo en pixel art (480 × 270), las fotos de los cuadros a 288 px en un lienzo de 1920 × 1080
+ // (.fotos) y, por delante, el pintor, las partículas y las plantas (.frente, 480 × 270). Así las fotos se ven
+ // nítidas sin tener que redibujar toda la escena a 1080p en cada fotograma.
+ const Q=4,PZ=S*Q,base=g,fotos=q('.fotos').getContext('2d'),frente=q('.frente').getContext('2d');
+ frente.imageSmoothingEnabled=false;let shots=[];
 
  // ───────── Participantes de muestra para el modo demo: [nombre, rosas, foto] ─────────
  const actors=[['@miso',5,0],['@vera_art',1,1],['@bruno',0,2],['@lucia',25,1],['@dani.rm',0,3],
@@ -174,7 +182,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
  // Cada cuadro guarda una ficha {id, coins, p}; p es la persona {uid, name, pic, hud, ready}.
  let assigned=[],atlasPics=[],mode='',srv=null,lastEv=0,asking=false,demoN=0;
  const people=new Map();
- const atlas=new Image(),plate=mk(S,S),ink=plate.getContext('2d'),blank=mk(S,S);
+ const atlas=new Image(),plate=mk(PZ,PZ),ink=plate.getContext('2d'),blank=mk(S,S);
  const tile=mk(STEP,H),tg=tile.getContext('2d'),vignette=mk(W,H);
  const SW=132,SH=164,OX=44,OY=158,spr=mk(SW,SH),sg=spr.getContext('2d'),sil=mk(SW,SH),lg=sil.getContext('2d');
  let room=1,slot=0,finished=[],lit=new Float32Array(TOTAL+1),personX=0,cam=0,C=0,t=0,life=0,phase='walk';
@@ -234,7 +242,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    const v=vignette.getContext('2d'),gr=v.createRadialGradient(W/2,122,110,W/2,122,320);
    gr.addColorStop(0,'rgba(3,5,8,0)');gr.addColorStop(1,'rgba(3,5,8,.72)');v.fillStyle=gr;v.fillRect(0,0,W,H);
    const top=v.createLinearGradient(0,0,0,40);top.addColorStop(0,'rgba(3,5,8,.45)');top.addColorStop(1,'rgba(3,5,8,0)');v.fillStyle=top;v.fillRect(0,0,W,40);
-   G=g;
+   ink.imageSmoothingEnabled=false;G=g;
  }
  // Cada foto se guarda en tres acabados: mancha sepia, bloques de color y detalle.
  // `Z` es el lado en píxeles: 72 para los cuadros de la galería, 168 para el cuadro gigante.
@@ -259,29 +267,39 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
      return {final:fin,mid,sepia:sep,grid,size:S,src:[img,sx,sy,sw,sh]};
    }
  }
- // Foto de reserva (silueta) para quien no tiene avatar o mientras carga.
- function placeholder(uid){
-   const c=mk(S,S),x=c.getContext('2d'),h=[...uid].reduce((s,ch)=>s+ch.charCodeAt(0)*7,0)%360;
-   x.fillStyle=`hsl(${h},42%,34%)`;x.fillRect(0,0,S,S);x.fillStyle=`hsl(${h},38%,68%)`;
-   x.beginPath();x.arc(S/2,27,14,0,7);x.fill();x.beginPath();x.ellipse(S/2,S+8,27,32,0,0,7);x.fill();
-   return makePic(c,0,0,S,S);
+ // Foto de reserva (silueta) para quien no tiene avatar o si su foto no carga.
+ function silhouette(uid,Z){
+   const c=mk(Z,Z),x=c.getContext('2d'),h=[...uid].reduce((s,ch)=>s+ch.charCodeAt(0)*7,0)%360,k=Z/72;
+   x.fillStyle=`hsl(${h},42%,34%)`;x.fillRect(0,0,Z,Z);x.fillStyle=`hsl(${h},38%,68%)`;
+   x.beginPath();x.arc(Z/2,27*k,14*k,0,7);x.fill();x.beginPath();x.ellipse(Z/2,Z+8*k,27*k,32*k,0,0,7);x.fill();
+   return c;
  }
- const hudOf=pic=>{try{return pic.final.toDataURL();}catch(e){return '';}};
+ const hudOf=c=>{try{return c.toDataURL();}catch(e){return '';}};
+ // Las fotos solo se convierten a lienzo cuando toca pintarlas (picOf), para no gastar memoria con toda la cola.
  function person(uid,info){
    info=info||{};const img=info.img||'',key=uid+'|'+img;let p=people.get(key);
    if(p){if(info.name)p.name=info.name;return p;}
-   p={uid,name:info.name||uid,pic:null,hud:'',ready:false};people.set(key,p);
+   p={uid,name:info.name||uid,pic:null,img:null,hud:'',ready:false};people.set(key,p);
    const demo=/^demo:(\d)$/.exec(img);
-   if(demo){p.pic=atlasPics[+demo[1]%4];p.hud=hudOf(p.pic);p.ready=true;return p;}
-   p.pic=placeholder(uid);p.hud=hudOf(p.pic);
+   if(demo){p.pic=atlasPics[+demo[1]%4];p.hud=p.pic.hud;p.ready=true;return p;}
+   p.hud=hudOf(silhouette(uid,48));
    if(/^https?:/.test(img)){
      const im=new Image(),url='avatar?u='+encodeURIComponent(img);
-     im.onload=()=>{const s=Math.min(im.naturalWidth,im.naturalHeight);
-       p.pic=makePic(im,(im.naturalWidth-s)/2,(im.naturalHeight-s)/2,s,s);p.hud=url;p.ready=true;if(loaded)ui();};
+     im.onload=()=>{p.img=im;p.pic=null;p.hud=url;p.ready=true;if(loaded)ui();};
      im.onerror=()=>{p.ready=true;};setTimeout(()=>{p.ready=true;},5000);im.src=url;
    }else p.ready=true;
    return p;
  }
+ // `full` pide también el boceto y los bloques (para pintar); un cuadro ya colgado solo guarda el acabado final.
+ function picOf(p,full){
+   if(!p.pic||(full&&!p.pic.mid)){
+     if(p.pic)p.pic=makePic(...p.pic.src,PZ,true);
+     else if(p.img){const z=Math.min(p.img.naturalWidth,p.img.naturalHeight);p.pic=makePic(p.img,(p.img.naturalWidth-z)/2,(p.img.naturalHeight-z)/2,z,z,PZ,true);}
+     else p.pic=makePic(silhouette(p.uid,PZ),0,0,PZ,PZ,PZ,true);
+   }
+   return p.pic;
+ }
+ const slim=p=>{if(p.pic&&!atlasPics.includes(p.pic))p.pic={final:p.pic.final,grid:p.pic.grid,size:p.pic.size,src:p.pic.src};};
  function colorAt(pic,px,py){
    const gr=pic.grid;if(!gr)return FALLBACK[Math.floor(rnd()*FALLBACK.length)];
    return gr[clamp(Math.floor(py/6),0,11)*12+clamp(Math.floor(px/6),0,11)];
@@ -321,6 +339,12 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
  }
 
  // ───────── Cuadros ─────────
+ function shine(x,y){                                             // destello al terminar un cuadro
+   const f=clamp(1-fx.t/.35,0,1);if(f>0){G.globalAlpha=f*.85;rect(x,y,S,S,'#fff6d8');G.globalAlpha=1;}
+   const s=(fx.t-.12)/.75;
+   if(s>0&&s<1){G.save();G.beginPath();G.rect(x,y,S,S);G.clip();const o=x-34+s*(S+68);
+     poly([[o,y],[o+16,y],[o-8,y+S],[o-24,y+S]],'rgba(255,255,255,.42)');poly([[o+22,y],[o+26,y],[o+2,y+S],[o-2,y+S]],'rgba(255,255,255,.3)');G.restore();}
+ }
  function drawFrame(i){
    const cx=i*STEP-C,x=cx-S/2,y=TOP,rec=finished[i],a=assigned[i],tier=a?tierOf(a.coins):0,F=FRAMES[tier],b=F.b,L=lit[i];
    // Foco de carril.
@@ -335,7 +359,9 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
        rect(x-b+o,y-b+m,1,1,F.light);rect(x-b+o,y+S+b-m-1,1,1,F.dark);rect(x-b+m,y-b+o,1,1,F.light);rect(x+S+b-m-1,y-b+o,1,1,F.dark);}
    }
    rect(x-2,y-2,S+4,S+4,F.inner);rect(x-1,y-1,S+2,S+2,'#1c120c');
-   G.drawImage(rec?rec.p.pic.final:i===slot?plate:blank,x,y);
+   const img=rec?picOf(rec.p).final:i===slot?plate:blank;
+   g.imageSmoothingEnabled=true;G.drawImage(img,x,y,S,S);g.imageSmoothingEnabled=false;
+   if(img!==blank)shots.push({i,x,y,img,L});            // se repetirá en alta resolución en la capa de fotos
    if(tier>=2){                                                // esquinas con gema
      const gem=tier===3?['#3aa0e8','#bfe6ff']:['#d8324a','#ff9aa8'];
      for(const sx of [-1,1])for(const sy of [-1,1]){
@@ -348,12 +374,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
      poly([[cx-10,cy],[cx-10,cy-6],[cx-5,cy-2],[cx,cy-9],[cx+5,cy-2],[cx+10,cy-6],[cx+10,cy]],F.mid2);
      rect(cx-10,cy-1,21,1,F.light);rect(cx-1,cy-5,3,3,'#d8324a');rect(cx-1,cy-5,1,1,'#ff9aa8');rect(cx-8,cy-3,2,2,'#3aa0e8');rect(cx+7,cy-3,2,2,'#3aa0e8');
    }
-   if(fx&&fx.i===i){                                           // destello al terminar
-     const f=clamp(1-fx.t/.35,0,1);if(f>0){G.globalAlpha=f*.85;rect(x,y,S,S,'#fff6d8');G.globalAlpha=1;}
-     const s=(fx.t-.12)/.75;
-     if(s>0&&s<1){G.save();G.beginPath();G.rect(x,y,S,S);G.clip();const o=x-34+s*(S+68);
-       poly([[o,y],[o+16,y],[o-8,y+S],[o-24,y+S]],'rgba(255,255,255,.42)');poly([[o+22,y],[o+26,y],[o+2,y+S],[o-2,y+S]],'rgba(255,255,255,.3)');G.restore();}
-   }
+   if(fx&&fx.i===i)shine(x,y);
    if(L<.98)rect(x-b,y-b,S+b*2,S+b*2,`rgba(4,8,12,${(.5*(1-L)).toFixed(3)})`);
    // Placa.
    const label=a?('@'+a.p.uid).slice(0,15):String(i+1).padStart(2,'0'),pw=Math.max(22,label.length*4+7);
@@ -449,7 +470,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 
  // ───────── Composición del fotograma ─────────
  function draw(){
-   G=g;g.globalAlpha=1;g.globalCompositeOperation='source-over';C=Math.round(cam);
+   g=base;G=g;shots=[];g.globalAlpha=1;g.globalCompositeOperation='source-over';C=Math.round(cam);
    const i0=Math.floor(C/STEP)-1,i1=Math.ceil((C+W)/STEP),a0=Math.max(0,i0),a1=Math.min(TOTAL-1,i1);
    for(let i=i0;i<=i1;i++)g.drawImage(tile,i*STEP-C,0);
    if(i0<=-1)door(-STEP-C,'ENTRADA');if(i1>=TOTAL)door(TOTAL*STEP-C,'SALIDA');
@@ -480,6 +501,16 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
      g.save();g.translate(cx,234);g.scale(1,.3);glow(0,0,78,'255,196,116',.26*L);g.restore();
    }
    g.globalCompositeOperation='source-over';
+   // Capa de fotos: los cuadros visibles, a 288 px, con su destello y su penumbra.
+   G=fotos;fotos.setTransform(1,0,0,1,0,0);fotos.clearRect(0,0,W*Q,H*Q);fotos.setTransform(Q,0,0,Q,0,0);
+   fotos.imageSmoothingEnabled=true;fotos.imageSmoothingQuality='high';
+   for(const sh of shots){
+     fotos.drawImage(sh.img,sh.x,sh.y,S,S);
+     if(fx&&fx.i===sh.i)shine(sh.x,sh.y);
+     if(sh.L<.98)rect(sh.x,sh.y,S,S,`rgba(4,8,12,${(.5*(1-sh.L)).toFixed(3)})`);
+   }
+   // Capa delantera: todo lo que pasa por delante de los cuadros.
+   g=frente;G=g;g.clearRect(0,0,W,H);g.globalAlpha=1;g.globalCompositeOperation='source-over';
    drawPainter();
    // Partículas.
    for(const p of parts){
@@ -499,6 +530,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    for(let n=Math.floor((cam*1.35-off-60)/P);n<=Math.ceil((cam*1.35-off+W+60)/P);n++)bigPlant(Math.round(n*P+off-cam*1.35));
    g.drawImage(vignette,0,0);
    if(veil>0)rect(0,0,W,H,`rgba(5,6,10,${veil.toFixed(3)})`);
+   g=base;G=g;
  }
 
  // ───────── Pincelada: tres pasadas sobre el lienzo ─────────
@@ -519,10 +551,12 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
      const w=Math.sqrt(P.r*P.r-dy*dy)+(hash(seed,dy)-.5)*2*Math.max(1,S/168),x0=Math.max(0,Math.round(o.x-w)),x1=Math.min(S,Math.round(o.x+w)+1);
      if(x1>x0)ctx.drawImage(im,x0,y,x1-x0,1,x0,y,x1-x0,1);
    }
-   if(passes===PASSES)passNow=p;
+   if(ctx===ink)passNow=p;
    return o;
  }
  const startX=i=>i*STEP-S/2+pathPoint(0,0).x-REACH;
+ const HPASSES=PASSES.map(p=>({...p,r:p.r*Q,wob:p.wob*Q}));
+ const gstamp=(tt,src)=>{const o=stampAt(tt,src,HPASSES,PZ,ink);return {x:o.x/Q,y:o.y/Q};};   // devuelve unidades de galería
  function burst(i,tier){
    const cx=i*STEP,cy=TOP+S/2,golds=['#ffe596','#fff6cf','#ffc94a'];
    for(let k=0;k<[16,30,50,90][tier];k++){
@@ -650,7 +684,7 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
    if(m.stage==='intro'){
      veil=Math.min(1,veil+dt*1.8);
      if(m.t>2.2&&(m.p.ready||m.t>7)){
-       m.big=makePic(...m.p.pic.src,LZ,true);m.stage='rise';m.t=0;     // la foto original, a 672 px y sin degradar
+       m.big=makePic(...picOf(m.p).src,LZ,true);m.stage='rise';m.t=0;     // la foto original, a 672 px y sin degradar
        stage.classList.add('mural');q('.cartel').classList.remove('ver');
        q('.campeon').textContent='🏆 '+m.p.name+' · SUPER CUADRO'+(m.rec.n?' Nº '+m.rec.n:'')+' · '+m.rec.coins+' monedas';q('.campeon').classList.add('ver');
      }
@@ -785,11 +819,12 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
  function change(s){phase=s;t=0;ui();q('.announce').textContent=q('.phase').textContent+' · '+q('.name').textContent;}
  // Empieza una galería. Con `restore` recupera los cuadros ya terminados (recarga de la página).
  function begin(restore){
+   if(!restore)people.clear();          // galería nueva: se sueltan las fotos de la anterior
    finished=[];assigned=[];(restore||[]).forEach((r,i)=>{assigned[i]=finished[i]=r;});slot=finished.length;
    lit.fill(0);for(let i=0;i<slot;i++)lit[i]=.72;
    personX=slot?startX(Math.min(slot,TOTAL))-90:-STEP;cam=(slot?personX+34:-STEP+70)-FOCUS;
    facing=1;veil=1;cartelT=slot?0:2.1;parts=[];fx=null;tip=null;loaded=true;
-   buildTile(THEMES[(room-1)%THEMES.length]);ink.drawImage(blank,0,0);
+   buildTile(THEMES[(room-1)%THEMES.length]);ink.drawImage(blank,0,0,PZ,PZ);
    q('.cartel b').textContent='Galería '+String(room).padStart(2,'0');requestNext();change('walk');
  }
 
@@ -829,7 +864,7 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
    if(r&&!finished[slot]&&s.v>=(r.v||0)){
      if(s.current&&s.current.id===r.id){r.coins=s.current.coins;r.gifts=s.current.gifts;}
      else if(!s.gallery.some(g=>g.id===r.id)&&s.room===room){   // saltado desde el panel
-       assigned[slot]=null;tip=null;ink.drawImage(blank,0,0);if(phase==='paint')change('wait');
+       assigned[slot]=null;tip=null;ink.drawImage(blank,0,0,PZ,PZ);if(phase==='paint')change('wait');
      }
    }
    for(const e of s.events)if(e.id>lastEv){lastEv=e.id;toast(e,s);}
@@ -848,26 +883,26 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
      requestNext();
      if(veil<=.35&&Math.abs(d)<=s+.01)change(slot<TOTAL?'wait':'fade');
    }else if(phase==='wait'){                       // en el lienzo, a la espera de participante o de su foto
-     if(canPaint()){pt=0;passNow=0;ink.drawImage(blank,0,0);change('paint');}else requestNext();
+     if(canPaint()){pt=0;passNow=0;ink.drawImage(blank,0,0,PZ,PZ);change('paint');}else requestNext();
    }else if(phase==='paint'&&!assigned[slot]){tip=null;change('wait');
    }else if(phase==='paint'){
-     const a=assigned[slot],tier=tierOf(a.coins),src=a.p.pic,end=Math.min(t,PAINT_T),before=passNow;let o;
+     const a=assigned[slot],tier=tierOf(a.coins),src=picOf(a.p,true),end=Math.min(t,PAINT_T),before=passNow;let o;
      for(let tt=pt;tt<end;tt+=.006){
-       o=stampAt(tt,src);
+       o=gstamp(tt,src);
        if(rnd()<.05+.03*tier){const c=colorAt(src,o.x,o.y);
          parts.push({type:'drop',x:slot*STEP-S/2+o.x,y:TOP+o.y,vx:-30+rnd()*60,vy:-50+rnd()*40,life:0,max:1.3+rnd()*.6,c,s:1+(rnd()<.4),fy:FEET-6+rnd()*22});}
        if(tier>=2&&rnd()<.03*tier)parts.push({type:'spark',x:slot*STEP-S/2+o.x+rnd()*8-4,y:TOP+o.y+rnd()*8-4,vx:rnd()*20-10,vy:-10-rnd()*20,life:0,max:.5+rnd()*.4,c:'#ffe596',s:1});
      }
-     o=stampAt(end,src);pt=end;
+     o=gstamp(end,src);pt=end;
      tip={x:slot*STEP-S/2+o.x,y:TOP+o.y};tipColor=colorAt(src,o.x,o.y);
      const dx=clamp((tip.x-REACH-personX)*9*dt,-90*dt,90*dt);personX+=dx;moved=Math.abs(dx)*.6;
      if(passNow!==before)ui();
-     if(t>=PAINT_T){ink.drawImage(src.final,0,0);finished[slot]=a;fx={i:slot,t:0};burst(slot,tier);cheerT=0;tip=null;
+     if(t>=PAINT_T){ink.drawImage(src.final,0,0);finished[slot]=a;slim(a.p);fx={i:slot,t:0};burst(slot,tier);cheerT=0;tip=null;
        if(mode==='live')api({action:'done',id:a.id}).catch(()=>{});change('admire');}
    }else if(phase==='admire'){
      const d=slot*STEP+S/2+28-personX;
      if(Math.abs(d)>.5){const s=Math.min(Math.abs(d),dt*95);personX+=Math.sign(d)*s;moved=s;}
-     else{facing=-1;cheerT+=dt;if(cheerT>1.15){facing=1;slot++;ink.drawImage(blank,0,0);requestNext();change('walk');}}
+     else{facing=-1;cheerT+=dt;if(cheerT>1.15){facing=1;slot++;ink.drawImage(blank,0,0,PZ,PZ);requestNext();change('walk');}}
    }else{
      veil=Math.min(1,veil+dt*1.4);
      if(veil>=1&&t>1){room=mode==='live'?Math.max(room+1,srv.room):room+1;begin();}
@@ -914,7 +949,7 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
  });
  atlas.onload=()=>{
    buildStatic();buildCity();const n=atlas.naturalWidth/2;
-   atlasPics=[0,1,2,3].map(i=>makePic(atlas,(i%2)*n,Math.floor(i/2)*n,n,n));
+   atlasPics=[0,1,2,3].map(i=>makePic(atlas,(i%2)*n,Math.floor(i/2)*n,n,n,PZ,true));atlasPics.forEach(pc=>{pc.hud=hudOf(pc.final);});
    try{const v=+localStorage.getItem('taller-velocidad');if([1,2,4].includes(v))speed=v;}catch(e){}
    paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
    // Con servidor (server.py) la cola es real; sin él, o con ?demo, participantes de muestra.

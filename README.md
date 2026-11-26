@@ -98,7 +98,7 @@ En el código: `battle_button()` y `battle_add()` en `server.py`; `startMural()`
 
 ## Cómo funciona
 
-El mundo se dibuja en un Canvas de **480 × 270** píxeles que se amplía sin suavizado. Cada retrato mide 72 × 72 y los cuadros están separados 170 píxeles, así que se ven tres a la vez: el anterior, el actual y el siguiente.
+El mundo se dibuja en un Canvas de **480 × 270** píxeles que se amplía sin suavizado. Encima hay otras dos capas: `.fotos` (1920 × 1080), donde solo se pintan las fotos de los cuadros a 288 × 288, y `.frente` (480 × 270), con el pintor, las partículas y las plantas que pasan por delante. Dibujar toda la galería a 1080p costaba unos 18 ms por fotograma; con las capas, menos de 3. En unidades del mundo, cada retrato mide 72 × 72 y los cuadros están separados 170 píxeles, así que se ven tres a la vez: el anterior, el actual y el siguiente.
 
 `update(dt)` avanza estos estados:
 
