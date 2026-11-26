@@ -1,98 +1,92 @@
 <!doctype html><html lang="es"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Batalla · El taller de retratos</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Súper cuadro · El taller de retratos</title>
 <style>
- /* Widget de la batalla de donadores (top 1 contra top 2) para TikTok LIVE Studio.
-    Fondo transparente; escala con el ancho de la fuente. Proporción recomendada 3:1 (por ejemplo 900 × 300).
+ /* Widget SUPER CUADRO (top 1 contra top 2 de donadores) para TikTok LIVE Studio.
+    Fondo transparente; escala con el ancho de la fuente. Tamaño recomendado 600 × 420.
     ?fondo=1 pone fondo oscuro para probar en el navegador. */
- html{font-size:2.2vw}
- body{margin:0;background:transparent;color:#fff3d6;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+ html{font-size:4.4vw}
+ body{margin:0;background:transparent;color:#fff;font-family:'Bahnschrift SemiCondensed','Bahnschrift','Arial Narrow','Segoe UI',sans-serif;overflow:hidden}
  body.fondo{background:#16211f}
  *{box-sizing:border-box}
- #w{position:relative;margin:.5rem;padding:.7rem 1rem .8rem;border-radius:.8rem;background:linear-gradient(#131f2bf2,#090f17f7);border:.1rem solid #b9862f;box-shadow:0 .3rem 1rem #000b;display:grid;grid-template-columns:1fr auto 1fr;grid-template-areas:"cab cab cab" "a vs b" "barra barra barra" "pie pie pie";gap:.5rem 1rem;align-items:center}
- .cab{grid-area:cab;display:flex;justify-content:space-between;align-items:baseline}
- .cab b{font:italic 1.5rem Georgia,serif;color:#ffe9b0}
- .cab span{font-size:.85rem;font-weight:700;letter-spacing:.14rem;color:#e7c887}
- .lado{display:grid;grid-template-columns:auto 1fr;gap:0 .8rem;align-items:center;min-width:0}
- .lado.b{grid-template-columns:1fr auto;text-align:right}.lado.b .av{order:2}
- .av{position:relative;width:5.2rem;height:5.2rem;display:grid;place-items:center;border-radius:.6rem;border:.16rem solid #3aa0e8;background:#22332f center/cover;font:700 2.4rem Georgia,serif;color:#fff8;box-shadow:0 0 1rem #3aa0e877}
- .lado.b .av{border-color:#e2485a;box-shadow:0 0 1rem #e2485a77}
- .nombre{font:1.5rem/1.15 Georgia,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .monedas{font:700 2.3rem/1.1 Consolas,monospace;color:#7cc6ff;text-shadow:0 0 .8rem #3aa0e888}
- .lado.b .monedas{color:#ff8a98;text-shadow:0 0 .8rem #e2485a88}
- .monedas small{font:600 .8rem 'Segoe UI',sans-serif;letter-spacing:.1rem;color:#cdbb93;text-shadow:none}
- .lado.vacio .av{border-style:dashed;opacity:.6;box-shadow:none}
- .lado.vacio .nombre{color:#cdbb93;font-style:italic;font-size:1.1rem}
- .lado.vacio .monedas{visibility:hidden}
- .corona{position:absolute;top:-1.5rem;left:50%;transform:translateX(-50%);font-size:1.8rem;display:none;filter:drop-shadow(0 .1rem .2rem #000)}
- .lider .corona{display:block;animation:flota 1.2s ease-in-out infinite}
- @keyframes flota{50%{transform:translate(-50%,-.25rem)}}
- .vs{grid-area:vs;display:grid;justify-items:center;gap:.1rem}
- .reloj{font:700 3.2rem/1 Consolas,monospace;color:#ffdc86;text-shadow:0 0 1rem #ffb84a88}
- .vs small{font-size:.8rem;font-weight:700;letter-spacing:.2rem;color:#cdbb93}
- #w.prisa .reloj{color:#ff6b6b;animation:late .5s ease-in-out infinite}
- @keyframes late{50%{transform:scale(1.12)}}
- #w.fin .reloj{font-size:2.1rem;color:#fff;animation:late 1s ease-in-out infinite}
- .barra{grid-area:barra;height:1.1rem;border-radius:1rem;overflow:hidden;background:#e2485a;border:.08rem solid #0008;box-shadow:inset 0 0 .4rem #0008}
- .barra i{display:block;height:100%;width:50%;background:linear-gradient(90deg,#2b7fc4,#6cc1ff);border-right:.2rem solid #fff;transition:width .6s cubic-bezier(.2,.8,.2,1)}
- .pie{grid-area:pie;display:flex;justify-content:space-between;gap:1rem;font-size:.9rem;color:#e9dfc6;white-space:nowrap}
+ #w{position:relative;padding:.4rem .5rem .5rem;display:grid;gap:.4rem}
+ .cab{display:flex;justify-content:space-between;align-items:center;padding:0 .3rem}
+ .cab b{font-size:1.5rem;font-weight:700;letter-spacing:.06rem;color:#ffe08a;text-shadow:0 .08rem 0 #5a3a00,0 0 .7rem #ffb84a99}
+ .reloj{min-width:4.6rem;padding:.05rem .7rem;border-radius:1rem;text-align:center;font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;background:#0b0f1ae6;border:.08rem solid #ffffff55}
+ #w.prisa .reloj{color:#ff6b6b;border-color:#ff6b6b;animation:late .5s ease-in-out infinite}
+ #w.fin .reloj{color:#1b1030;background:#ffd772;border-color:#fff1b8;animation:late 1s ease-in-out infinite}
+ #w.espera .reloj{font-size:.95rem;padding:.3rem .7rem;color:#cdbb93}
+ @keyframes late{50%{transform:scale(1.08)}}
+ .card{position:relative;display:grid;grid-template-columns:auto 1fr;gap:0 .9rem;align-items:center;padding:.55rem .9rem;border-radius:.7rem;box-shadow:0 .2rem .7rem #000a}
+ .card.a{margin-top:.5rem;background:linear-gradient(100deg,#3a1d5c,#241238 55%,#3b1f33);border:.13rem solid #e8b84a;box-shadow:0 .2rem .7rem #000a,0 0 .9rem #ffb84a55,inset 0 0 1.2rem #ffb84a22}
+ .card.b{background:linear-gradient(100deg,#1b2a66,#141b45 55%,#161a3a);border:.1rem solid #9fb0e8}
+ .card>div{min-width:0}
+ .av{position:relative;width:3.5rem;height:3.5rem;border-radius:50%;display:grid;place-items:center;background:#2c2a55 center/cover;border:.14rem solid #cfd6f5;font-size:1.7rem;font-weight:700;color:#ffffffb0}
+ .card.a .av{width:4rem;height:4rem;border-color:#ffd772;box-shadow:0 0 .7rem #ffb84a99}
+ .rank{position:absolute;right:-.25rem;bottom:-.25rem;width:1.35rem;height:1.35rem;border-radius:50%;display:grid;place-items:center;font-size:.85rem;font-weight:700;color:#1b1030;background:#e9ecf7;border:.08rem solid #fff;box-shadow:0 .08rem .2rem #000a}
+ .card.a .rank{background:linear-gradient(#ffe596,#f0b232);border-color:#fff6cf}
+ .corona{position:absolute;left:-.55rem;top:-1.35rem;font-size:1.7rem;transform:rotate(-18deg);filter:drop-shadow(0 .08rem .15rem #000a)}
+ #w.fin .card.a.lleno .corona{animation:flota 1s ease-in-out infinite}
+ @keyframes flota{50%{transform:rotate(-18deg) translateY(-.25rem)}}
+ .nombre{font-size:1.45rem;font-weight:600;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 .08rem .15rem #0009}
+ .card.b .nombre{font-size:1.25rem}
+ .card:not(.lleno) .nombre{color:#e6e2f5}
+ .monedas{display:flex;align-items:center;gap:.4rem;font-size:1.5rem;font-weight:700;line-height:1.1;color:#f3c75a;font-variant-numeric:tabular-nums}
+ .card.b .monedas{font-size:1.3rem}
+ .moneda{width:1.05em;height:1.05em;flex:none;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff1b0,#e9b53c 55%,#a8741a);border:.07em solid #7a5210;box-shadow:inset 0 0 0 .12em #f6d16a}
+ .card.sube{animation:sube .5s}
+ @keyframes sube{30%{transform:scale(1.04);filter:brightness(1.4)}}
+ .pie{padding:0 .3rem;font-size:.85rem;display:flex;justify-content:space-between;gap:.6rem;white-space:nowrap;color:#f1e9d6;text-shadow:0 .08rem .15rem #000}
  .pie b{color:#ffd772}
- #w.espera .lado,#w.espera .barra,#w.espera .vs small{opacity:.35}
- .anuncio{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:.3rem;border-radius:.7rem;background:radial-gradient(#3b2a08f5,#0b0f17fa);text-align:center;opacity:0;pointer-events:none;transition:opacity .5s}
+ .anuncio{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:.3rem;border-radius:.7rem;background:radial-gradient(#3b2a08f7,#0b0f17fa);border:.13rem solid #e8b84a;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s}
  .anuncio.ver{opacity:1}
- .anuncio b{font:italic 2.6rem Georgia,serif;color:#ffe596;text-shadow:0 0 1.2rem #ffb84a}
- .anuncio span{font-size:1.2rem;color:#fff3d6}
+ .anuncio small{font-size:1rem;letter-spacing:.2rem;color:#ffd772}
+ .anuncio b{font-size:2.1rem;color:#ffe596;text-shadow:0 0 1.2rem #ffb84a;max-width:92%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .anuncio span{font-size:1.05rem;color:#fff3d6}
 </style></head><body>
 <div id="w" class="espera">
- <div class="cab"><b>Batalla de donadores</b><span id="num"></span></div>
- <div class="lado a vacio"><span class="av"><span class="corona">👑</span><i></i></span><div><div class="nombre"></div><div class="monedas"></div></div></div>
- <div class="vs"><div class="reloj">3:00</div><small id="estado">VS</small></div>
- <div class="lado b vacio"><div><div class="nombre"></div><div class="monedas"></div></div><span class="av"><span class="corona">👑</span><i></i></span></div>
- <div class="barra"><i></i></div>
- <div class="pie"><span id="tercero"></span><span>🏆 El ganador se lleva el <b>cuadro gigante</b> del rascacielos</span></div>
- <div class="anuncio"><b></b><span></span></div>
+ <div class="cab"><b>SUPER CUADRO</b><span class="reloj">3:00</span></div>
+ <div class="card a"><span class="av"><span class="corona">👑</span><i></i><span class="rank">1</span></span><div><div class="nombre"></div><div class="monedas"><span class="moneda"></span><span class="n">0</span></div></div></div>
+ <div class="card b"><span class="av"><i></i><span class="rank">2</span></span><div><div class="nombre"></div><div class="monedas"><span class="moneda"></span><span class="n">0</span></div></div></div>
+ <div class="pie"><span id="tercero"></span><span>🏆 El <b>top 1</b> gana el súper cuadro del rascacielos</span></div>
+ <div class="anuncio"><small>SUPER CUADRO</small><b></b><span></span></div>
 </div>
 <script>
  if(new URLSearchParams(location.search).get('fondo'))document.body.classList.add('fondo');
  const $=s=>document.querySelector(s);
  let st=null,offset=0,boot=null,lastEv=-1;
  function avatar(e,uid,u){
-   const img=(u&&u.img)||'',demo=/^demo:(\d)$/.exec(img),t=e.querySelector('i');t.textContent='';e.style.backgroundImage='';e.style.backgroundColor='';
+   const img=(u&&u.img)||'',demo=/^demo:(\d)$/.exec(img),t=e.querySelector('i');t.textContent='';t.style.fontStyle='normal';e.style.backgroundImage='';e.style.backgroundColor='';
    if(demo){const k=+demo[1]%4;e.style.backgroundImage='url("assets/retratos.jpg")';e.style.backgroundSize='200% 200%';e.style.backgroundPosition=(k%2?'100%':'0%')+' '+(k<2?'0%':'100%');}
    else if(/^https?:/.test(img)){e.style.backgroundSize='cover';e.style.backgroundPosition='center';e.style.backgroundImage=`url("avatar?u=${encodeURIComponent(img)}")`;}
    else{t.textContent=uid?((u&&u.name)||uid).replace(/^@/,'').charAt(0).toUpperCase():'?';if(uid)e.style.backgroundColor=`hsl(${[...String(uid)].reduce((s,c)=>s+c.charCodeAt(0)*7,0)%360},42%,34%)`;}
  }
- function side(sel,r,s,lead){
-   const e=$(sel);e.classList.toggle('vacio',!r);e.classList.toggle('lider',!!lead);
+ function card(sel,r,s,pos){
+   const e=$(sel);e.classList.toggle('lleno',!!r);
    const key=r?r.uid+'|'+((s.users[r.uid]||{}).img||''):'';
    if(e.dataset.k!==key){e.dataset.k=key;avatar(e.querySelector('.av'),r&&r.uid,r&&s.users[r.uid]);}
-   e.querySelector('.nombre').textContent=r?(s.users[r.uid]||{}).name||r.uid:'Envía un regalo para entrar';
-   e.querySelector('.monedas').innerHTML=r?r.coins+' <small>MONEDAS</small>':'0';
+   e.querySelector('.nombre').textContent=r?(s.users[r.uid]||{}).name||r.uid:'Esperando al top '+pos;
+   const coins=String(r?r.coins:0),n=e.querySelector('.n');
+   if(n.textContent!==coins){n.textContent=coins;if(r){e.classList.remove('sube');void e.offsetWidth;e.classList.add('sube');}}
  }
  function render(){
-   const s=st,b=s.battle,w=$('#w');
-   w.classList.toggle('espera',!b);
-   $('#num').textContent=b?'Nº '+b.n:'';
-   const top=b?b.top:[],a=top[0],c=top[1],left=b?b.endsAt-(Date.now()+offset):0,over=b&&left<=0;
-   side('.lado.a',a,s,over&&a);side('.lado.b',c,s,false);
-   $('.barra i').style.width=(a||c?Math.round((a?a.coins:0)/((a?a.coins:0)+(c?c.coins:0))*100):50)+'%';
-   $('#tercero').textContent=top[2]?'3º '+((s.users[top[2].uid]||{}).name||top[2].uid)+' · '+top[2].coins:b&&b.count>3?'':'';
-   w.classList.toggle('fin',!!over);w.classList.toggle('prisa',!!b&&!over&&left<=10000);
+   const s=st,b=s.battle,w=$('#w'),top=b?b.top:[],left=b?b.endsAt-(Date.now()+offset):0,over=b&&left<=0;
+   w.classList.toggle('espera',!b);w.classList.toggle('fin',!!over);w.classList.toggle('prisa',!!b&&!over&&left<=10000);
+   card('.card.a',top[0],s,1);card('.card.b',top[1],s,2);
+   $('#tercero').textContent=top[2]?'3º '+((s.users[top[2].uid]||{}).name||top[2].uid)+' · '+top[2].coins:'';
    const sec=Math.max(0,Math.ceil(left/1000));
-   $('.reloj').textContent=!b?Math.floor(s.battleSeconds/60)+':'+String(s.battleSeconds%60).padStart(2,'0'):over?'¡TIEMPO!':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
-   $('#estado').textContent=!b?'EMPIEZA PRONTO':over?(a?'GANA '+((s.users[a.uid]||{}).name||a.uid).toUpperCase():'SIN REGALOS'):'VS';
+   $('.reloj').textContent=!b?'EMPIEZA PRONTO':over?'¡TIEMPO!':Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
  }
  function announce(e,s){
    const box=$('.anuncio');box.querySelector('b').textContent='🏆 '+((s.users[e.uid]||{}).name||e.uid);
-   box.querySelector('span').textContent='gana la batalla Nº '+e.n+' con '+e.coins+' monedas · ¡cuadro gigante!';
+   box.querySelector('span').textContent='gana con '+e.coins+' monedas · ¡a pintar el rascacielos!';
    box.classList.add('ver');setTimeout(()=>box.classList.remove('ver'),7000);
  }
  new EventSource('events').onmessage=m=>{
    const s=JSON.parse(m.data);
    if(boot&&s.boot&&s.boot!==boot){location.reload();return;}boot=s.boot;
    offset=s.now-Date.now();
-   const maxId=s.events.reduce((x,e)=>Math.max(x,e.id),0);
    if(lastEv>=0)for(const e of s.events)if(e.id>lastEv&&e.kind==='battle_end')announce(e,s);
-   lastEv=maxId;st=s;render();
+   lastEv=s.events.reduce((x,e)=>Math.max(x,e.id),0);st=s;render();
  };
  setInterval(()=>{if(st)render();},250);
 </script>

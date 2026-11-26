@@ -459,7 +459,7 @@
    if(mural||!loaded||!rec)return;
    mural={rec,p:person(rec.uid,info),t:0,stage:'intro',camY:150,gx:141,gy:392,tip:null,pt:0,big:null,parts:[],fire:0};
    G=lctx;rect(0,0,B,B,'#efe2c4');for(let y=0;y<B;y+=3)for(let x=(y/3%2)*2;x<B;x+=4)rect(x,y,1,1,'#e0d0ac');G=g;
-   q('.cartel b').textContent='🏆 '+mural.p.name;q('.cartel span').textContent='gana la batalla'+(rec.n?' Nº '+rec.n:'')+' · ¡cuadro gigante!';
+   q('.cartel b').textContent='🏆 '+mural.p.name;q('.cartel span').textContent='gana el súper cuadro';
    q('.cartel').classList.add('ver');
  }
  function endMural(){
@@ -474,7 +474,7 @@
      if(m.t>2.2&&(m.p.ready||m.t>7)){
        m.big=makePic(...m.p.pic.src,B);m.stage='rise';m.t=0;
        stage.classList.add('mural');q('.cartel').classList.remove('ver');
-       q('.campeon').textContent='🏆 '+m.p.name+' · ganador de la batalla'+(m.rec.n?' Nº '+m.rec.n:'')+' · '+m.rec.coins+' monedas';q('.campeon').classList.add('ver');
+       q('.campeon').textContent='🏆 '+m.p.name+' · SUPER CUADRO'+(m.rec.n?' Nº '+m.rec.n:'')+' · '+m.rec.coins+' monedas';q('.campeon').classList.add('ver');
      }
    }else if(m.stage==='rise'){
      veil=Math.max(0,veil-dt*1.4);const k=clamp(m.t/3,0,1),e=k*k*(3-2*k);
@@ -519,7 +519,7 @@
      const s=(m.t-.15)/1.1;
      if(m.stage==='finale'&&s>0&&s<1){g.save();g.beginPath();g.rect(BX,by,B,B);g.clip();const o=BX-60+s*(B+120);
        poly([[o,by],[o+30,by],[o-14,by+B],[o-44,by+B]],'rgba(255,255,255,.4)');g.restore();}
-     const label=('BATALLA '+(m.rec.n||'')+' - @'+m.p.uid).slice(0,34),pw=label.length*4+9;
+     const label=('SUPER CUADRO '+(m.rec.n||'')+' - @'+m.p.uid).slice(0,36),pw=label.length*4+9;
      rect(240-pw/2,by+B+11,pw,11,'#4a3416');rect(240-pw/2+1,by+B+12,pw-2,9,'#d2ac5a');rect(240-pw/2+1,by+B+12,pw-2,1,GL);text(label,240,by+B+14,'#33230e');
    }
    // Góndola de limpiacristales colgada de la azotea, con el pintor dentro.

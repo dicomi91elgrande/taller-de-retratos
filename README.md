@@ -63,7 +63,7 @@ Son páginas aparte, con fondo transparente, que se añaden como fuente de enlac
 | Dirección | Qué muestra | Tamaño recomendado |
 | --- | --- | --- |
 | `/cola` | Quién se está pintando y los 8 siguientes, con foto, nombre e icono y cantidad de cada regalo. `?n=12` cambia cuántos se ven. | 420 × 900 |
-| `/batalla` | Top 1 contra top 2 de donadores, con reloj, barra y el 3º. | 900 × 300 |
+| `/batalla` | Widget «SUPER CUADRO»: dos tarjetas con el top 1 y el top 2 de donadores, reloj y el 3º. | 600 × 280 |
 
 ## Batalla de donadores y cuadro gigante
 
