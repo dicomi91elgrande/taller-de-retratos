@@ -23,13 +23,18 @@
  const clamp=(x,l,h)=>Math.min(h,Math.max(l,x)),lerp=(a,b,v)=>a+(b-a)*v;
  const hash=(a,b)=>{const v=Math.sin(a*127.1+b*311.7)*43758.5453;return v-Math.floor(v);};
  const rnd=Math.random;
- function rect(x,y,w,h,c){G.fillStyle=c;G.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
- function poly(pts,c){G.fillStyle=c;G.beginPath();pts.forEach(([x,y],i)=>i?G.lineTo(Math.round(x),Math.round(y)):G.moveTo(Math.round(x),Math.round(y)));G.closePath();G.fill();}
+ // Con `smooth` activo las primitivas dibujan formas suaves (se usa para el pintor, que va a 4× de resolución).
+ let smooth=false;
+ function rect(x,y,w,h,c){G.fillStyle=c;if(smooth)G.fillRect(x,y,w,h);else G.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));}
+ function poly(pts,c){const r=smooth?v=>v:Math.round;G.fillStyle=c;G.beginPath();pts.forEach(([x,y],i)=>i?G.lineTo(r(x),r(y)):G.moveTo(r(x),r(y)));G.closePath();G.fill();}
  function line(x,y,X,Y,c,size=1){
+   if(smooth){G.strokeStyle=c;G.lineWidth=size;G.lineCap='round';G.beginPath();G.moveTo(x,y);G.lineTo(X,Y);G.stroke();return;}
    const n=Math.max(1,Math.ceil(Math.max(Math.abs(X-x),Math.abs(Y-y))));G.fillStyle=c;
    for(let i=0;i<=n;i++)G.fillRect(Math.round(lerp(x,X,i/n)-size/2),Math.round(lerp(y,Y,i/n)-size/2),size,size);
  }
- function oval(x,y,rx,ry,c){for(let n=-ry;n<=ry;n++){const w=Math.round(rx*Math.sqrt(Math.max(0,1-(n/ry)**2)));rect(x-w,y+n,w*2+1,1,c);}}
+ function oval(x,y,rx,ry,c){
+   if(smooth){G.fillStyle=c;G.beginPath();G.ellipse(x+.5,y+.5,rx+.5,ry+.5,0,0,7);G.fill();return;}
+   for(let n=-ry;n<=ry;n++){const w=Math.round(rx*Math.sqrt(Math.max(0,1-(n/ry)**2)));rect(x-w,y+n,w*2+1,1,c);}}
  function glow(x,y,r,rgb,a){
    if(a<=.003)return;const gr=g.createRadialGradient(x,y,0,x,y,r);
    gr.addColorStop(0,`rgba(${rgb},${a})`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);
@@ -68,7 +73,7 @@
  const people=new Map();
  const atlas=new Image(),plate=mk(PZ,PZ),ink=plate.getContext('2d'),blank=mk(S,S);
  const tile=mk(STEP,H),tg=tile.getContext('2d'),vignette=mk(W,H);
- const SW=132,SH=164,OX=44,OY=158,spr=mk(SW,SH),sg=spr.getContext('2d'),sil=mk(SW,SH),lg=sil.getContext('2d');
+ const SW=132,SH=164,OX=44,OY=158,R=4,spr=mk(SW*R,SH*R),sg=spr.getContext('2d'),sil=mk(SW*R,SH*R),lg=sil.getContext('2d');
  let room=1,slot=0,finished=[],lit=new Float32Array(TOTAL+1),personX=0,cam=0,C=0,t=0,life=0,phase='walk';
  let paused=false,speed=1,prev=0,loaded=false,facing=1,moving=0,walkAmt=0,veil=1,cartelT=0,cheerT=0,pt=0,fdt=0;
  let tip=null,tipColor=GO,passNow=0,fx=null,hand={x:8,y:-52},parts=[];
@@ -277,13 +282,15 @@
    const dx=fx_-hx,dy=fy-hy,d=Math.hypot(dx,dy)||1,m=Math.min(d,43.5),ex=hx+dx/d*m,ey=hy+dy/d*m,h=Math.sqrt(Math.max(0,484-m*m/4));
    const kx=(hx+ex)/2+dy/d*h,ky=(hy+ey)/2-dx/d*h;
    line(hx,hy,kx,ky,c1,7);line(kx,ky,ex,ey-3,c2,6);
-   rect(ex-4,ey-5,9,5,'#5a3a26');rect(ex+3,ey-3,5,3,'#5a3a26');rect(ex-4,ey-1,12,2,'#2a1a11');
+   G.fillStyle='#2a1a11';G.beginPath();G.roundRect(ex-4.6,ey-2.2,13.6,2.6,[.6,1.4,1,.8]);G.fill();          // suela
+   G.fillStyle='#5a3a26';G.beginPath();G.roundRect(ex-4.4,ey-5.6,12.8,4.6,[2.4,3.4,.6,.6]);G.fill();          // zapato
+   G.fillStyle='rgba(255,220,180,.22)';G.beginPath();G.ellipse(ex+3.6,ey-4.2,3,1,-.2,0,7);G.fill();
  }
  function arm(sx,sy,hx,hy,sleeve){
    const dx=hx-sx,dy=hy-sy,d=Math.hypot(dx,dy)||1,m=Math.min(d,55.5),ex=sx+dx/d*m,ey=sy+dy/d*m,h=Math.sqrt(Math.max(0,784-m*m/4));
    const kx=(sx+ex)/2-dy/d*h,ky=(sy+ey)/2+dx/d*h;
    line(sx,sy,kx,ky,sleeve,6);line(lerp(sx,kx,.45),lerp(sy,ky,.45),lerp(sx,kx,.6),lerp(sy,ky,.6),STRIPE,6);
-   line(kx,ky,ex,ey,SKIN,4);rect(kx-3,ky-3,6,6,sleeve);
+   line(kx,ky,ex,ey,SKIN,4);oval(kx-.5,ky-.5,3,3,sleeve);
    return [ex,ey];
  }
  // `M` solo se usa en la escena del cuadro gigante: {fx, fy, tip, cheer, cheerT, flip} en coordenadas de pantalla.
@@ -303,7 +310,7 @@
    hand.x=lerp(hand.x,target.x,k);hand.y=lerp(hand.y,target.y,k);
    if(!painting)btip=cheer?{x:hand.x+5,y:hand.y-24}:{x:hand.x+9,y:hand.y-20};
 
-   G=sg;sg.setTransform(1,0,0,1,0,0);sg.clearRect(0,0,SW,SH);sg.setTransform(1,0,0,1,OX,OY);
+   G=sg;smooth=true;sg.setTransform(1,0,0,1,0,0);sg.clearRect(0,0,SW*R,SH*R);sg.setTransform(R,0,0,R,OX*R,OY*R);
    const hipY=-44+by,foot=o=>({x:lerp(o>0?6:-5,Math.sin(ph+(o>0?0:Math.PI))*11,w),y:-Math.max(0,Math.cos(ph+(o>0?0:Math.PI)))*5*w});
    const fa=foot(-1),fb=foot(1);
    leg(-3,hipY,fa.x,fa.y,TR_D,TR_D);                                   // pierna lejana
@@ -323,15 +330,22 @@
    rect(-3,-38+by,2,2,'#e6b84c');rect(5,-35+by,3,2,'#d8324a');rect(3,-59+by,2,1,'#f4e6c4');rect(-2,-33+by,2,1,'#6bbf8a');
    rect(-6+lean,-87+by,13,4,BERET);poly([[-5+lean,-85+by],[-12+lean,-74+by],[-7+lean,-73+by]],BERET_D);
    // Cabeza de perfil con bigote y boina.
-   const hx=3+lean,hy=-98+by,blink=(life%3.4)<.12;
-   oval(hx-3,hy+1,10,10,HAIR);oval(hx,hy,10,11,SKIN);
-   rect(hx-11,hy-5,6,13,HAIR);rect(hx-6,hy-1,3,5,SKIN_D);
-   rect(hx+9,hy-1,4,4,SKIN);rect(hx+10,hy+3,2,1,SKIN_D);
-   if(blink)rect(hx+4,hy-3,3,1,HAIR);else{rect(hx+4,hy-5,3,3,'#fffaf0');rect(hx+5,hy-4,2,2,'#2a1c18');}
-   rect(hx+3,hy-8,5,1,HAIR);rect(hx+2,hy+4,10,2,HAIR);rect(hx+11,hy+3,2,1,HAIR);rect(hx+1,hy+5,2,2,HAIR);
-   if(cheer)rect(hx+4,hy+7,5,2,'#8a2a22');else rect(hx+5,hy+8,3,1,'#b86a50');
-   rect(hx+2,hy+1,2,2,'#e89a84');
-   oval(hx-2,hy-10,13,5,BERET_D);oval(hx-3,hy-12,12,4,BERET);rect(hx-9,hy-15,8,1,BERET_H);rect(hx-2,hy-19,2,4,BERET_D);rect(hx-9,hy-7,18,2,BERET_D);
+   const hx=3+lean,hy=-98+by,blink=(life%3.4)<.12,el=(x,y,rx,ry,c,rot=0)=>{G.fillStyle=c;G.beginPath();G.ellipse(x,y,rx,ry,rot,0,7);G.fill();};
+   el(hx-2.5,hy+1.6,10.6,11,HAIR);el(hx+.8,hy+.5,10,11.2,SKIN);
+   G.fillStyle=HAIR;G.beginPath();G.moveTo(hx-9.4,hy-7.5);G.quadraticCurveTo(hx-3.6,hy-9.5,hx-4.4,hy-2);G.quadraticCurveTo(hx-4.8,hy+6,hx-7.4,hy+9);G.quadraticCurveTo(hx-12,hy+2,hx-9.4,hy-7.5);G.fill();
+   el(hx-4.4,hy+1.8,1.9,2.7,SKIN_D);el(hx-4.1,hy+1.8,.9,1.5,'#b97a56');                       // oreja
+   el(hx+10.9,hy+1.3,2.7,2.4,SKIN);el(hx+10.6,hy+3.1,1.5,.7,SKIN_D);                           // nariz
+   el(hx+3.2,hy+2.6,2.2,1.5,'rgba(232,130,110,.5)');                                           // mejilla
+   G.strokeStyle=HAIR;G.lineCap='round';
+   if(blink){G.lineWidth=1;G.beginPath();G.moveTo(hx+4,hy-3);G.lineTo(hx+7.6,hy-3.2);G.stroke();}
+   else{el(hx+5.7,hy-3.4,2.1,2.3,'#fffaf0');el(hx+6.4,hy-3.2,1.2,1.35,'#2a1c18');el(hx+6.8,hy-3.7,.4,.4,'#fff');}
+   G.lineWidth=1.2;G.beginPath();G.moveTo(hx+2.8,hy-7.2);G.quadraticCurveTo(hx+6,hy-9.2,hx+8.8,hy-7);G.stroke();    // ceja
+   G.lineWidth=2.5;G.beginPath();G.moveTo(hx+2,hy+6.2);G.quadraticCurveTo(hx+7,hy+3,hx+12.4,hy+5.4);G.quadraticCurveTo(hx+14.2,hy+4.6,hx+13.4,hy+2.8);G.stroke();   // bigote
+   if(cheer)el(hx+6.8,hy+8.8,2.5,1.7,'#8a2a22');
+   else{G.strokeStyle='#b86a50';G.lineWidth=.9;G.beginPath();G.moveTo(hx+5,hy+8.6);G.quadraticCurveTo(hx+6.6,hy+9.4,hx+8.2,hy+8.5);G.stroke();}
+   el(hx-1.5,hy-9.4,13.8,5.8,BERET_D);el(hx-2.6,hy-11.6,12.6,4.9,BERET,-.06);el(hx-5.6,hy-13.6,5.2,1.3,BERET_H,-.1);   // boina
+   line(hx-1.2,hy-18.4,hx-.7,hy-15.6,BERET_D,1.7);
+   G.fillStyle=BERET_D;G.beginPath();G.roundRect(hx-9.8,hy-7.3,19.4,2.3,1.1);G.fill();
    // Brazo que pinta, pincel y mano.
    const [ax,ay]=arm(1+lean,-79+by,hand.x,hand.y,SHIRT);
    const dx=btip.x-ax,dy=btip.y-ay,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
@@ -340,16 +354,16 @@
    line(btip.x-ux*5,btip.y-uy*5,btip.x,btip.y,painting?tipColor:'#e6d2a8',3);
    if(M&&painting){rect(btip.x-7,btip.y-4,15,8,'#d8d2c0');rect(btip.x-7,btip.y-3,15,6,tipColor);}   // rodillo
    oval(ax,ay,3,3,SKIN);rect(ax-1,ay-1,2,2,SKIN_D);
-   sg.setTransform(1,0,0,1,0,0);
-   lg.globalCompositeOperation='source-over';lg.clearRect(0,0,SW,SH);lg.drawImage(spr,0,0);
-   lg.globalCompositeOperation='source-in';lg.fillStyle=OUTLINE;lg.fillRect(0,0,SW,SH);
+   sg.setTransform(1,0,0,1,0,0);smooth=false;
+   lg.globalCompositeOperation='source-over';lg.clearRect(0,0,SW*R,SH*R);lg.drawImage(spr,0,0);
+   lg.globalCompositeOperation='source-in';lg.fillStyle=OUTLINE;lg.fillRect(0,0,SW*R,SH*R);
    G=g;
    const ct=M?M.cheerT:cheerT,jump=cheer?Math.abs(Math.sin(ct*7.5))*7*(M?1:clamp(1.2-ct,0,1)):0;
    const x=M?M.fx:Math.round(personX)-C,fy=M?M.fy:FEET;
-   if(!M)oval(x,FEET+1,Math.round(15-jump*.6),3,'rgba(0,0,0,.4)');
+   if(!M){g.fillStyle='rgba(0,0,0,.4)';g.beginPath();g.ellipse(x+.5,FEET+1.5,15-jump*.6,3.2,0,0,7);g.fill();}
    g.save();g.translate(x,fy-(M?jump:Math.round(jump)));if(M?M.flip:facing<0)g.scale(-1,1);
-   for(const [ox,oy] of [[1,0],[-1,0],[0,1],[0,-1]])g.drawImage(sil,-OX+ox,-OY+oy);
-   g.drawImage(spr,-OX,-OY);g.restore();
+   for(const [ox,oy] of [[.8,0],[-.8,0],[0,.8],[0,-.8],[.57,.57],[-.57,.57],[.57,-.57],[-.57,-.57]])g.drawImage(sil,-OX+ox,-OY+oy,SW,SH);   // contorno
+   g.drawImage(spr,-OX,-OY,SW,SH);g.restore();
  }
 
  // ───────── Composición del fotograma ─────────
@@ -393,9 +407,9 @@
      if(fx&&fx.i===sh.i)shine(sh.x,sh.y);
      if(sh.L<.98)rect(sh.x,sh.y,S,S,`rgba(4,8,12,${(.5*(1-sh.L)).toFixed(3)})`);
    }
-   // Capa delantera: todo lo que pasa por delante de los cuadros.
+   g=fotos;G=g;drawPainter();                               // el pintor también va en alta resolución
+   // Capa delantera: partículas, plantas, viñeta y fundido.
    g=frente;G=g;g.clearRect(0,0,W,H);g.globalAlpha=1;g.globalCompositeOperation='source-over';
-   drawPainter();
    // Partículas.
    for(const p of parts){
      const x=p.x-C,a=clamp((p.max-p.life)/Math.min(.5,p.max),0,1);
@@ -646,9 +660,7 @@ c=FIRE[Math.floor(rnd()*FIRE.length)],n=46+Math.floor(rnd()*40),big=1+rnd()*.9;
    fr(gx-25.3,6-cy,.6,gy-22-(6-cy),'#8089ac');fr(gx+28.7,6-cy,.6,gy-22-(6-cy),'#8089ac');
    fr(gx-27.5,gy-24,5,6,'#2a3050');fr(gx+26.5,gy-24,5,6,'#2a3050');fr(gx-27.5,gy-24,5,.7,'#6f7aa8');fr(gx+26.5,gy-24,5,.7,'#6f7aa8');   // motores
    fr(gx-26,gy-18,1.2,19,'#59618a');fr(gx+28.8,gy-18,1.2,19,'#59618a');fr(gx-26,gy-18,56,1.1,'#7f89b4');                                  // barandilla trasera
-   h.imageSmoothingEnabled=false;
    drawPainter({fx:gx,fy:gy,tip:m.tip&&{x:m.tip.x,y:m.tip.y-cy},cheer:fin,cheerT:m.t,flip:false});
-   h.imageSmoothingEnabled=true;
    gr=h.createLinearGradient(0,gy,0,gy+7);gr.addColorStop(0,'#ffe596');gr.addColorStop(.25,'#e0aa2c');gr.addColorStop(1,'#6e5216');fr(gx-29,gy,62,7,gr);
    for(let k=0;k<8;k++)fr(gx-27+k*8,gy+2.4,4,1.2,'rgba(30,20,0,.55)');                                                                   // franjas de aviso
    fr(gx-29,gy-10,62,1.3,'#dfe5f5');fr(gx-29,gy-5,62,.7,'#aab3d0');for(let k=0;k<7;k++)fr(gx-28.6+k*10.1,gy-10,.8,10,'#aab3d0');          // barandilla delantera
