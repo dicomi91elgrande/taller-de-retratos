@@ -9,8 +9,9 @@
  body.fondo{background:#16211f}
  *{box-sizing:border-box}
  #w{padding:.3rem .5rem .4rem;display:grid;gap:.28rem}
- header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:0 .2rem}
- header b{display:block;font-size:2.35rem;font-weight:700;line-height:1;letter-spacing:.05rem;color:#fff;text-shadow:0 .1rem 0 #000,0 0 .5rem #000c}
+ header{padding:0 .2rem}
+ header .fila{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+ header b{display:block;white-space:nowrap;font-size:2.05rem;font-weight:700;line-height:1;letter-spacing:.05rem;color:#fff;text-shadow:0 .1rem 0 #000,0 0 .5rem #000c}
  header em{font-style:normal;padding:0 .35rem;border-radius:.35rem;color:#1b1030;background:linear-gradient(#ffe596,#f0b232);text-shadow:none;box-shadow:0 0 .8rem #ffb84a99}
  header .sub{display:block;margin-top:.2rem;font-size:1.08rem;font-weight:700;letter-spacing:.04rem;color:#ffd772;white-space:nowrap;text-shadow:0 .08rem 0 #000,0 0 .4rem #000c}
  #len{flex:none;padding:.1rem .6rem;border-radius:1rem;font-size:.85rem;font-weight:700;color:#fff;background:#0b0f1ae6;border:.08rem solid #ffffff55}
@@ -50,7 +51,7 @@
  .vacia{padding:.7rem;text-align:center;font-size:1rem;color:#d9d3ee;border-radius:.7rem;border:.1rem dashed #9fb0e8;background:#141b45cc}
 </style></head><body>
 <div id="w">
- <header><div><b>ESCRIBE <em>YO</em></b><span class="sub">LOS REGALOS TIENEN PRIORIDAD</span></div><span id="len"></span></header>
+ <header><b>ESCRIBE <em>YO</em> Y TE PINTO</b><div class="fila"><span class="sub">LOS REGALOS TIENEN PRIORIDAD</span><span id="len"></span></div></header>
  <section id="now"><span class="av"><span class="pincel">🖌️</span><i></i></span><div><small>AHORA PINTANDO</small><div class="nombre"></div><div class="regalos"></div></div></section>
  <ol id="list"></ol>
 </div>
