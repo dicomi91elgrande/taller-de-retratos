@@ -231,15 +231,62 @@ def join(uid, name, img):
     return 'ok'
 
 
-def add_gift(uid, name, img, coins):
+# Catálogo de regalos de TikTok: ID -> nombre, monedas e icono (lo genera actualizar_regalos.py).
+GIFTS, GIFT_IDS, GIFT_NAMES = [], {}, {}
+
+
+def load_gifts():
+    try:
+        with open(os.path.join(BASE, 'regalos.json'), 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        GIFTS[:] = data['g']
+        GIFT_IDS.update(data['ids'])
+        for i, g in enumerate(GIFTS):
+            GIFT_NAMES.setdefault(slug(g[0]), i)
+        log(' Catálogo de regalos: %d' % len(GIFTS))
+    except Exception as exc:
+        log(' Sin catálogo de regalos (regalos.json):', exc)
+
+
+def find_gift(gid, gname):
+    """Devuelve {name, img, unit} del regalo, por ID o por nombre; None si no se sabe cuál es."""
+    gid, gname = str(gid or '').strip(), str(gname or '').strip()
+    i = GIFT_IDS.get(gid)
+    if i is None and gname and '{' not in gname:
+        i = GIFT_NAMES.get(slug(gname))
+    if i is not None:
+        return {'name': GIFTS[i][0], 'img': GIFTS[i][2], 'unit': GIFTS[i][1]}
+    if gname and '{' not in gname:
+        return {'name': gname[:30], 'img': '', 'unit': 0}
+    return None
+
+
+def note_gift(entry, gift, coins, n):
+    """Apunta en la ficha qué regalo envió y cuántos; el más valioso queda primero."""
+    name = gift['name'] if gift else 'Regalo'
+    gifts = entry.setdefault('gifts', [])
+    for g in gifts:
+        if g['name'] == name:
+            g['n'] += n
+            break
+    else:
+        gifts.append({'name': name, 'img': gift['img'] if gift else '',
+                      'unit': (gift and gift['unit']) or max(1, coins // max(n, 1)), 'n': n})
+    gifts.sort(key=lambda g: -g['unit'])
+
+
+def add_gift(uid, name, img, coins, gift=None, n=1):
+    """`coins` es el total del envío (n regalos iguales)."""
     coins = max(0, int(coins))
     if coins <= 0:
         return 'sin monedas'
     touch_user(uid, name, img)
+    info = {'gift': gift['name'] if gift else 'Regalo', 'img': gift['img'] if gift else '', 'n': n}
     cur = state['current']
     if cur and cur['uid'] == uid:
         cur['coins'] += coins
-        ev('gift', uid=uid, coins=coins, total=cur['coins'], pos=0)
+        note_gift(cur, gift, coins, n)
+        ev('gift', uid=uid, coins=coins, total=cur['coins'], pos=0, **info)
         changed()
         return 'mejora su cuadro'
     entry = next((e for e in state['queue'] if e['uid'] == uid), None)
@@ -249,8 +296,9 @@ def add_gift(uid, name, img, coins):
         state['seq'] += 1
         entry = {'uid': uid, 'coins': coins, 'n': state['seq']}
         state['queue'].append(entry)
+    note_gift(entry, gift, coins, n)
     sort_queue()
-    ev('gift', uid=uid, coins=coins, total=entry['coins'], pos=position(uid))
+    ev('gift', uid=uid, coins=coins, total=entry['coins'], pos=position(uid), **info)
     changed()
     return 'cola nº %d' % position(uid)
 
@@ -260,7 +308,7 @@ def take_next():
     if not state['current'] and state['queue']:
         e = state['queue'].pop(0)
         state['seq'] += 1
-        state['current'] = {'id': state['seq'], 'uid': e['uid'], 'coins': e['coins']}
+        state['current'] = {'id': state['seq'], 'uid': e['uid'], 'coins': e['coins'], 'gifts': e.get('gifts', [])}
         changed()
     return state['current']
 
@@ -297,7 +345,10 @@ def api_action(a, d):
         if not name:
             return 'Falta el nombre', {}
         uid = uid_from_name(name)
-        add_gift(uid, name if uid not in state['users'] else None, d.get('img'), int(d.get('coins') or 0))
+        gift = find_gift(d.get('giftid'), d.get('giftname'))
+        n = min(999, max(1, int(d.get('n') or 1)))
+        unit = (gift and gift['unit']) or int(d.get('coins') or 0)
+        add_gift(uid, name if uid not in state['users'] else None, d.get('img'), unit * n, gift, n)
     elif a == 'comment':
         name = str(d.get('name') or '').strip()
         if not name:
@@ -313,8 +364,10 @@ def api_action(a, d):
             name = random.choice(TEST_NAMES) + str(random.randint(1, 99))
             uid = norm_uid(name)
             img = 'demo:%d' % random.randint(0, 3)
-            if random.random() < 0.3:
-                add_gift(uid, name, img, random.choice([1, 1, 2, 5, 5, 10, 30]))
+            if random.random() < 0.4:
+                gift = find_gift(None, random.choice(['Rose', 'Rose', 'Rose', 'Finger Heart', 'Doughnut', 'Corgi']))
+                n = random.choice([1, 1, 2, 3, 5])
+                add_gift(uid, name, img, ((gift and gift['unit']) or 1) * n, gift, n)
             else:
                 join(uid, name, img)
     elif a == 'remove':
@@ -352,16 +405,18 @@ def handle_webhook(obj):
             return 'comment:ignorado'
         return 'comment:' + join(uid, name, img)
     if event in ('gift', 'coins') or 'coins' in obj:
+        gift = find_gift(obj.get('giftid'), obj.get('giftname'))
         try:
             coins = int(float(str(obj.get('coins'))))
-        except (TypeError, ValueError):
-            coins = 1                          # el botón de prueba de Interactive deja {coins} vacío
+        except (TypeError, ValueError):        # el botón de prueba de Interactive deja {coins} vacío
+            coins = (gift and gift['unit']) or 1
         try:                                   # si el webhook se manda una sola vez por combo, trae {repeatcount}
             repeat = int(float(str(obj.get('repeat'))))
         except (TypeError, ValueError):
             repeat = 1
-        coins *= min(max(repeat, 1), 1000)
-        return 'gift:%d -> %s' % (coins, add_gift(uid, name, img, coins))
+        repeat = min(max(repeat, 1), 1000)
+        coins *= repeat
+        return 'gift:%d -> %s' % (coins, add_gift(uid, name, img, coins, gift, repeat))
     return 'ignorado'
 
 
@@ -563,6 +618,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     load_state()
+    load_gifts()
     threading.Thread(target=flusher, daemon=True).start()
     log('=' * 60)
     log(' EL TALLER DE RETRATOS')

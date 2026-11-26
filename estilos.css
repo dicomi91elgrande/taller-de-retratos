@@ -41,9 +41,15 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 #taller .siguientes li>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #taller .siguientes .av{width:3.2cqw;height:3.2cqw}
 #taller .siguientes li:first-child .av{border-color:#fff1b8}
-#taller .siguientes em{position:absolute;right:-1cqw;top:-.6cqw;padding:0 .35cqw;border-radius:1cqw;background:#7a1c28;border:.1cqw solid #ff9aa8;font:600 .8cqw/1.5 'Segoe UI',sans-serif;color:#fff}
+#taller .siguientes em{position:absolute;right:-1cqw;top:-.6cqw;padding:0 .35cqw;border-radius:1cqw;background:#7a1c28;border:.1cqw solid #ff9aa8;font:600 .95cqw/1.5 'Segoe UI',sans-serif;color:#fff}
 
 #taller .turn:empty{display:none}
+#taller .turn{display:inline-flex;align-items:center;gap:.7cqw}
+#taller .regalo{display:inline-flex;align-items:center;gap:.15cqw;white-space:nowrap}
+#taller .regalo img{width:1.7em;height:1.7em;object-fit:contain;filter:drop-shadow(0 .1cqw .1cqw #0008)}
+#taller .regalo i{font-style:normal}
+#taller .regalo b{font-weight:700}
+#taller .avisos .regalo{margin-right:.3cqw;font-size:1.1em}
 #taller .mas{font:600 1.2cqw 'Segoe UI',sans-serif;color:#ffd772}
 #taller .cola.vacia>small{visibility:hidden}
 #taller .siguientes li>span:last-child{font-size:.9cqw}

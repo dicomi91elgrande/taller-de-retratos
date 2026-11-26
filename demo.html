@@ -43,9 +43,15 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
 #taller .siguientes li>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #taller .siguientes .av{width:3.2cqw;height:3.2cqw}
 #taller .siguientes li:first-child .av{border-color:#fff1b8}
-#taller .siguientes em{position:absolute;right:-1cqw;top:-.6cqw;padding:0 .35cqw;border-radius:1cqw;background:#7a1c28;border:.1cqw solid #ff9aa8;font:600 .8cqw/1.5 'Segoe UI',sans-serif;color:#fff}
+#taller .siguientes em{position:absolute;right:-1cqw;top:-.6cqw;padding:0 .35cqw;border-radius:1cqw;background:#7a1c28;border:.1cqw solid #ff9aa8;font:600 .95cqw/1.5 'Segoe UI',sans-serif;color:#fff}
 
 #taller .turn:empty{display:none}
+#taller .turn{display:inline-flex;align-items:center;gap:.7cqw}
+#taller .regalo{display:inline-flex;align-items:center;gap:.15cqw;white-space:nowrap}
+#taller .regalo img{width:1.7em;height:1.7em;object-fit:contain;filter:drop-shadow(0 .1cqw .1cqw #0008)}
+#taller .regalo i{font-style:normal}
+#taller .regalo b{font-weight:700}
+#taller .avisos .regalo{margin-right:.3cqw;font-size:1.1em}
 #taller .mas{font:600 1.2cqw 'Segoe UI',sans-serif;color:#ffd772}
 #taller .cola.vacia>small{visibility:hidden}
 #taller .siguientes li>span:last-child{font-size:.9cqw}
@@ -512,21 +518,32 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
  // ───────── Interfaz ─────────
  const setAv=(el,p)=>{el.style.backgroundImage=p&&p.hud?`url("${p.hud}")`:'none';};
  const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
- function upcoming(){   // [{p, coins}] y cuántos hay en total
-   if(mode==='demo')return [[0,1,2,3].map(k=>{const a=actors[(demoN+k)%actors.length];return {coins:a[1],p:person(a[0].slice(1),{name:a[0],img:'demo:'+a[2]})};}),0];
+ // Regalo con su icono y la cantidad enviada. Sin icono conocido, un emoji.
+ function chip(g){
+   const c=el('span','regalo');
+   if(g.img&&mode==='live'){const im=el('img');im.alt='';im.src='avatar?u='+encodeURIComponent(g.img);c.appendChild(im);}
+   else c.appendChild(el('i','',/^ros[ea]/i.test(g.name)?'🌹':'🎁'));
+   c.appendChild(el('b','','×'+g.n));return c;
+ }
+ const roses=n=>n?[{name:'Rose',img:'',unit:1,n}]:[];
+ const giftsOf=r=>r.gifts&&r.gifts.length?r.gifts:roses(r.coins);
+ const demoRec=a=>({coins:a[1],gifts:roses(a[1]),p:person(a[0].slice(1),{name:a[0],img:'demo:'+a[2]})});
+ function upcoming(){   // [{p, coins, gifts}] y cuántos hay en total
+   if(mode==='demo')return [[0,1,2,3].map(k=>demoRec(actors[(demoN+k)%actors.length])),0];
    if(!srv)return [[],0];
-   return [srv.queue.slice(0,4).map(e=>({coins:e.coins,p:person(e.uid,srv.users[e.uid])})),srv.queueLen];
+   return [srv.queue.slice(0,4).map(e=>({coins:e.coins,gifts:e.gifts,p:person(e.uid,srv.users[e.uid])})),srv.queueLen];
  }
  function ui(){
    const a=slot<TOTAL?assigned[slot]:null,tier=a?tierOf(a.coins):0,n2=v=>String(v).padStart(2,'0');
    q('.room').textContent=n2(room);q('.contador b').textContent=n2(finished.filter(Boolean).length);
    q('.name').textContent=a?a.p.name:slot<TOTAL?'Lienzo libre':'¡Completa!';setAv(q('.actual .av'),a&&a.p);
-   q('.turn').textContent=a?(a.coins?'🌹 ×'+a.coins+(tier?' · '+TIER_NAME[tier]:''):'Turno de «yo»'):'';
+   const turn=q('.turn');turn.textContent=a&&!a.coins?'Turno de «yo»':'';
+   if(a&&a.coins){giftsOf(a).slice(0,3).forEach(g=>turn.appendChild(chip(g)));if(tier)turn.appendChild(el('span','',TIER_NAME[tier]));}
    q('.actual').dataset.tier=tier;stage.classList.toggle('libre',!a&&slot<TOTAL);
    q('.phase').textContent=(slot>=TOTAL?'GALERÍA COMPLETA':!a?'ESPERANDO PARTICIPANTES':phase==='paint'?'PINTANDO · '+PASSES[passNow].name:phase==='admire'?'¡RETRATO TERMINADO!':phase==='wait'?'PREPARANDO EL LIENZO':'DE CAMINO AL LIENZO')+(slot<TOTAL?' · CUADRO '+n2(slot+1):'');
    const [next,count]=upcoming(),list=q('.siguientes');list.textContent='';
    for(const b of next){
-     const li=el('li'),av=el('span','av');setAv(av,b.p);if(b.coins)av.appendChild(el('em','','🌹'+b.coins));
+     const li=el('li'),av=el('span','av');setAv(av,b.p);if(b.coins){const em=el('em');em.appendChild(chip(giftsOf(b)[0]));av.appendChild(em);}
      li.append(av,el('span','',b.p.name));list.appendChild(li);
    }
    q('.mas').textContent=count>4?'+'+(count-4):'';q('.cola').classList.toggle('vacia',!next.length);
@@ -550,30 +567,32 @@ body{margin:0;min-height:100vh;display:grid;place-items:center;background:#05070
  function requestNext(){
    if(slot>=TOTAL||assigned[slot]||asking)return;
    if(mode==='demo'){
-     const a=actors[demoN++%actors.length];assigned[slot]={id:demoN,coins:a[1],p:person(a[0].slice(1),{name:a[0],img:'demo:'+a[2]})};ui();return;
+     assigned[slot]={id:demoN+1,...demoRec(actors[demoN++%actors.length])};ui();return;
    }
    if(!srv||(!srv.current&&!srv.queueLen))return;
    asking=true;const s=slot,r=room;
    api({action:'next'}).then(d=>{
      asking=false;
-     if(d.current&&s===slot&&r===room&&!assigned[slot]){assigned[slot]={id:d.current.id,coins:d.current.coins,v:d.v,p:person(d.current.uid,d.user)};ui();}
+     if(d.current&&s===slot&&r===room&&!assigned[slot]){assigned[slot]={id:d.current.id,coins:d.current.coins,gifts:d.current.gifts,v:d.v,p:person(d.current.uid,d.user)};ui();}
    }).catch(()=>{asking=false;});
  }
  function toast(e,s){
    const name=(s.users[e.uid]||{}).name||e.uid;
-   const txt=e.kind==='join'?`${name} entra en la cola · nº ${e.pos}`:e.kind==='gift'?`🌹 ${name} +${e.coins}`+(e.pos?` · sube al nº ${e.pos}`:' · ¡mejora su marco!'):e.text;
-   if(!txt)return;const box=q('.avisos'),d=el('div',e.kind,txt);box.appendChild(d);
+   const txt=e.kind==='join'?`${name} entra en la cola · nº ${e.pos}`:e.kind==='gift'?` ${name}`+(e.pos?` · sube al nº ${e.pos}`:' · ¡mejora su marco!'):e.text;
+   if(!txt)return;const box=q('.avisos'),d=el('div',e.kind,txt);
+   if(e.kind==='gift')d.prepend(chip({name:e.gift||'Regalo',img:e.img,n:e.n||1}));
+   box.appendChild(d);
    while(box.children.length>3)box.firstChild.remove();setTimeout(()=>d.remove(),4500);
  }
  function onState(s){
-   const fromGallery=()=>s.gallery.map(g=>({id:g.id,coins:g.coins,p:person(g.uid,s.users[g.uid])}));
+   const fromGallery=()=>s.gallery.map(g=>({id:g.id,coins:g.coins,gifts:g.gifts,p:person(g.uid,s.users[g.uid])}));
    if(!srv){srv=s;mode='live';room=s.room;lastEv=s.events.reduce((m,e)=>Math.max(m,e.id),0);begin(fromGallery());return;}
    srv=s;
    // Reinicio desde el panel: la galería del servidor va por detrás de la nuestra.
    if(s.room<room||(s.room===room&&s.gallery.length<finished.filter(Boolean).length)){room=s.room;begin(fromGallery());return;}
    const r=slot<TOTAL&&assigned[slot];
    if(r&&!finished[slot]&&s.v>=(r.v||0)){
-     if(s.current&&s.current.id===r.id)r.coins=s.current.coins;
+     if(s.current&&s.current.id===r.id){r.coins=s.current.coins;r.gifts=s.current.gifts;}
      else if(!s.gallery.some(g=>g.id===r.id)&&s.room===room){   // saltado desde el panel
        assigned[slot]=null;tip=null;ink.drawImage(blank,0,0);if(phase==='paint')change('wait');
      }

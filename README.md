@@ -23,8 +23,10 @@ En Interactive, el perfil **«pintar»** ya tiene dos acciones WebHook (`Taller 
 
 ```
 {"event":"comment","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","comment":"{comment}"}
-{"event":"gift","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","coins":"{coins}"}
+{"event":"gift","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","coins":"{coins}","giftid":"{giftid}","giftname":"{giftname}"}
 ```
+
+Interactive no manda la imagen del regalo, solo su ID y su nombre. El icono sale de `regalos.json`, que `actualizar_regalos.py` genera a partir del catálogo que Interactive guarda en este PC; vuelve a ejecutarlo cuando TikTok añada regalos nuevos. Un regalo desconocido se muestra con 🎁.
 
 `/debug` muestra las últimas peticiones recibidas. Con la variable de entorno `HOOK_TOKEN`, `/webhook` y `/api` exigen `?token=…`.
 

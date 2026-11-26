@@ -8,7 +8,7 @@
  h2{margin:0 0 10px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:#e7c887}
  section{padding:16px;border:1px solid #33463f;border-radius:10px;background:#15231f}
  .fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
- input{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #4a5f56;background:#0c1513;color:inherit;min-width:0}
+ input,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #4a5f56;background:#0c1513;color:inherit;min-width:0}
  input[type=number]{width:90px}
  button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid #5a6f66;background:#22342f;color:inherit;cursor:pointer}
  button:hover{background:#2e453e}
@@ -45,7 +45,8 @@
   <div class="fila">
    <input id="name" placeholder="Nombre" value="prueba">
    <button id="yo">Escribe «yo»</button>
-   <input id="coins" type="number" min="1" value="1" aria-label="Monedas">
+   <select id="giftname" aria-label="Regalo"><option value="Rose">Rosa (1)</option><option value="Finger Heart">Finger Heart (5)</option><option value="Doughnut">Doughnut (30)</option><option value="Corgi">Corgi (299)</option><option value="Galaxy">Galaxy (1000)</option></select>
+   <span>×</span><input id="coins" type="number" min="1" value="1" aria-label="Cantidad">
    <button id="gift" class="oro">Enviar regalo</button>
    <button id="test">+5 espectadores de prueba</button>
   </div>
@@ -64,7 +65,7 @@
   Mensaje de chat
   <code>{"event":"comment","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","comment":"{comment}"}</code>
   Cualquier regalo
-  <code>{"event":"gift","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","coins":"{coins}"}</code>
+  <code>{"event":"gift","username":"{username}","nickname":"{nickname}","imgprofile":"{imgprofile}","coins":"{coins}","giftid":"{giftid}","giftname":"{giftname}"}</code>
  </section>
 </main>
 <script>
@@ -73,7 +74,7 @@
    .then(r=>r.json()).then(d=>{$('msg').textContent=d.error||'';return d;}).catch(()=>{$('msg').textContent='Sin conexión con el servidor';});
  $('url').textContent=location.origin+'/webhook';
  $('yo').onclick=()=>api({action:'comment',name:$('name').value,text:'yo'});
- $('gift').onclick=()=>api({action:'gift',name:$('name').value,coins:+$('coins').value||1});
+ $('gift').onclick=()=>api({action:'gift',name:$('name').value,giftname:$('giftname').value,n:+$('coins').value||1});
  $('test').onclick=()=>api({action:'test',n:5});
  $('skip').onclick=()=>api({action:'skip_current'});
  $('clear').onclick=()=>{if(confirm('¿Vaciar la cola?'))api({action:'clear_queue'});};
@@ -87,7 +88,7 @@
    s.queue.forEach((q,i)=>{
      const li=document.createElement('li'),mk=(c,t)=>{const x=document.createElement('span');x.className=c;x.textContent=t;return x;},b=document.createElement('button');
      b.textContent='✕';b.title='Quitar de la cola';b.onclick=()=>api({action:'remove',uid:q.uid});
-     li.append(mk('n',i+1),mk('',name(q.uid)+'  @'+q.uid),mk('c',q.coins?'🌹 '+q.coins:''),b);ol.appendChild(li);
+     li.append(mk('n',i+1),mk('',name(q.uid)+'  @'+q.uid),mk('c',q.coins?(q.gifts||[]).map(g=>g.name+' ×'+g.n).join(', ')+' · '+q.coins+' monedas':''),b);ol.appendChild(li);
    });
  };
 </script>
