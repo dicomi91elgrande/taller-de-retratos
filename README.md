@@ -71,7 +71,7 @@ Son páginas aparte, con fondo transparente, que se añaden como fuente de enlac
 - Al llegar el reloj a cero la batalla se congela y espera. No pasa nada hasta que pulses el botón.
 - **El botón** cierra la batalla y empieza la siguiente. Si alguien regaló, el 1º se lleva el cuadro gigante; en empate gana quien llegó antes a esa cifra; si nadie regaló, solo se reinicia.
 - El botón está en el panel y en la dirección `/do/batalla` (para un atajo o Stream Deck). `/do/parar` detiene las batallas.
-- **Cuadro gigante**: en ese momento la galería se congela tal cual, el pintor sube en una góndola por la fachada del rascacielos y pinta la foto del ganador en una lona de 168 × 168 píxeles, con focos y fuegos artificiales. Dura unos 25 segundos y después la galería sigue donde estaba. El ganador conserva su turno normal en la cola.
+- **Cuadro gigante**: en ese momento la galería se congela tal cual, el pintor sube en una góndola por la fachada del rascacielos y pinta la foto del ganador en una lona gigante, con focos y fuegos artificiales. Esta escena se dibuja en un lienzo aparte de 1920 × 1080 (`.hd`) y la foto se pinta a 672 × 672 a partir de la imagen original, sin el acabado pixelado de la galería. Dura unos 25 segundos y después la galería sigue donde estaba. El ganador conserva su turno normal en la cola.
 - En modo demo, la tecla **B** lanza un cuadro gigante de prueba.
 
 En el código: `battle_button()` y `battle_add()` en `server.py`; `startMural()`, `updateMural()` y `drawMural()` en `juego.js`.
