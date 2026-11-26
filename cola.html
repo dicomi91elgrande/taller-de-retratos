@@ -2,25 +2,28 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Cola · El taller de retratos</title>
 <style>
  /* Widget de la cola para TikTok LIVE Studio, con el mismo estilo que SUPER CUADRO.
-    Fondo transparente; todo escala con el ancho de la fuente. Tamaño recomendado 420 × 900.
+    Fondo transparente; todo escala con el ancho de la fuente. Tamaño recomendado 420 × 600.
     Opciones en la dirección:  ?n=8 (cuántos se ven)   ?fondo=1 (fondo oscuro, para probar en el navegador) */
  html{font-size:4.4vw}
  body{margin:0;background:transparent;color:#fff;font-family:'Bahnschrift SemiCondensed','Bahnschrift','Arial Narrow','Segoe UI',sans-serif;overflow:hidden}
  body.fondo{background:#16211f}
  *{box-sizing:border-box}
- #w{padding:.4rem .5rem .5rem;display:grid;gap:.4rem}
- header{display:flex;align-items:center;justify-content:space-between;padding:0 .3rem}
- header b{font-size:1.5rem;font-weight:700;letter-spacing:.06rem;color:#ffe08a;text-shadow:0 .08rem 0 #5a3a00,0 0 .7rem #ffb84a99}
- #len{padding:.1rem .7rem;border-radius:1rem;font-size:.95rem;font-weight:700;color:#fff;background:#0b0f1ae6;border:.08rem solid #ffffff55}
+ #w{padding:.3rem .5rem .4rem;display:grid;gap:.28rem}
+ header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:0 .2rem}
+ header b{display:block;font-size:2.35rem;font-weight:700;line-height:1;letter-spacing:.05rem;color:#fff;text-shadow:0 .1rem 0 #000,0 0 .5rem #000c}
+ header em{font-style:normal;padding:0 .35rem;border-radius:.35rem;color:#1b1030;background:linear-gradient(#ffe596,#f0b232);text-shadow:none;box-shadow:0 0 .8rem #ffb84a99}
+ header .sub{display:block;margin-top:.2rem;font-size:1.08rem;font-weight:700;letter-spacing:.04rem;color:#ffd772;white-space:nowrap;text-shadow:0 .08rem 0 #000,0 0 .4rem #000c}
+ #len{flex:none;padding:.1rem .6rem;border-radius:1rem;font-size:.85rem;font-weight:700;color:#fff;background:#0b0f1ae6;border:.08rem solid #ffffff55}
  #len:empty{display:none}
  small{display:block;font-size:.72rem;font-weight:700;letter-spacing:.14rem;color:#ffd772}
  /* Tarjeta de quien se está pintando: morada y dorada, como el top 1 */
- #now{position:relative;display:grid;grid-template-columns:auto 1fr;gap:0 .9rem;align-items:center;margin-top:.35rem;padding:.5rem .9rem;border-radius:.7rem;background:linear-gradient(100deg,#3a1d5c,#241238 55%,#3b1f33);border:.13rem solid #e8b84a;box-shadow:0 .2rem .7rem #000a,0 0 .9rem #ffb84a55,inset 0 0 1.2rem #ffb84a22}
- #now .av{width:3.8rem;height:3.8rem;border-color:#ffd772;box-shadow:0 0 .7rem #ffb84a99}
+ #now{position:relative;display:grid;grid-template-columns:auto 1fr;gap:0 .9rem;align-items:center;margin-top:.3rem;padding:.3rem .8rem;border-radius:.6rem;background:linear-gradient(100deg,#3a1d5c,#241238 55%,#3b1f33);border:.13rem solid #e8b84a;box-shadow:0 .2rem .7rem #000a,0 0 .9rem #ffb84a55,inset 0 0 1.2rem #ffb84a22}
+ #now .av{width:3rem;height:3rem;border-color:#ffd772;box-shadow:0 0 .7rem #ffb84a99}
  #now .pincel{position:absolute;left:-.5rem;top:-1.1rem;font-size:1.5rem;transform:rotate(-12deg);filter:drop-shadow(0 .08rem .15rem #000a);animation:pinta 1s ease-in-out infinite}
  @keyframes pinta{50%{transform:rotate(8deg) translateY(.15rem)}}
  #now.libre .pincel{display:none}
- #now .nombre{font-size:1.45rem}
+ #now .nombre{font-size:1.3rem}
+ #now small{font-size:.62rem}
  #now.libre .nombre{color:#e6e2f5}
  #now>div{min-width:0}
  .nombre{font-weight:600;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 .08rem .15rem #0009}
@@ -30,12 +33,12 @@
  .regalo img{width:1.5em;height:1.5em;object-fit:contain;filter:drop-shadow(0 .05rem .05rem #0008)}
  /* Filas de la cola: azules; doradas si han regalado */
  ol{position:relative;margin:0;padding:0;list-style:none;transition:height .4s}
- li{position:absolute;left:0;right:0;height:2.95rem;display:grid;grid-template-columns:auto 1fr auto;gap:.8rem;align-items:center;padding:0 .8rem 0 .7rem;border-radius:.7rem;background:linear-gradient(100deg,#1b2a66,#141b45 55%,#161a3a);border:.1rem solid #9fb0e8;box-shadow:0 .15rem .5rem #000a;transition:top .5s cubic-bezier(.2,.8,.2,1),opacity .4s,transform .4s}
+ li{position:absolute;left:0;right:0;height:2.3rem;display:grid;grid-template-columns:auto 1fr auto;gap:.7rem;align-items:center;padding:0 .7rem 0 .5rem;border-radius:.55rem;background:linear-gradient(100deg,#1b2a66,#141b45 55%,#161a3a);border:.1rem solid #9fb0e8;box-shadow:0 .15rem .5rem #000a;transition:top .5s cubic-bezier(.2,.8,.2,1),opacity .4s,transform .4s}
  li.pagado{background:linear-gradient(100deg,#34205a,#1d1440 55%,#2a1a3a);border-color:#e8b84a}
  li.entra{opacity:0;transform:translateX(2rem)}
  li.sale{opacity:0;transform:translateX(-2rem)}
- li .av{width:2.25rem;height:2.25rem;font-size:1.1rem}
- li .nombre{font-size:1.15rem}
+ li .av{width:1.8rem;height:1.8rem;font-size:.95rem}
+ li .nombre{font-size:1.1rem}
  li .regalos{font-size:.95rem;justify-content:flex-end}
  .av{position:relative;flex:none;display:grid;place-items:center;border-radius:50%;border:.12rem solid #cfd6f5;background:#2c2a55 center/cover;font-size:1.6rem;font-weight:700;color:#ffffffb0}
  .av i{font-style:normal}
@@ -47,13 +50,12 @@
  .vacia{padding:.7rem;text-align:center;font-size:1rem;color:#d9d3ee;border-radius:.7rem;border:.1rem dashed #9fb0e8;background:#141b45cc}
 </style></head><body>
 <div id="w">
- <header><b>COLA DE RETRATOS</b><span id="len"></span></header>
+ <header><div><b>ESCRIBE <em>YO</em></b><span class="sub">LOS REGALOS TIENEN PRIORIDAD</span></div><span id="len"></span></header>
  <section id="now"><span class="av"><span class="pincel">🖌️</span><i></i></span><div><small>AHORA PINTANDO</small><div class="nombre"></div><div class="regalos"></div></div></section>
  <ol id="list"></ol>
- <footer>Escribe <b>«yo»</b> · <i>un regalo te adelanta</i></footer>
 </div>
 <script>
- const P=new URLSearchParams(location.search),MAX=Math.min(30,Math.max(1,+P.get('n')||8)),ROW=3.3;
+ const P=new URLSearchParams(location.search),MAX=Math.min(30,Math.max(1,+P.get('n')||8)),ROW=2.55;
  if(P.get('fondo'))document.body.classList.add('fondo');
  const $=id=>document.getElementById(id),el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
  function avatar(e,uid,u){
@@ -95,7 +97,7 @@
      const sig=JSON.stringify(q.gifts||q.coins);if(li.dataset.g!==sig){li.dataset.g=sig;chips(li.children[2],q,2);}
    });
    for(const [uid,li] of rows)if(!seen.has(uid)){rows.delete(uid);li.classList.add('sale');setTimeout(()=>li.remove(),450);}
-   list.style.height=Math.max(0,top.length*ROW-.35)+'rem';
+   list.style.height=Math.max(0,top.length*ROW-.25)+'rem';
    const v=document.querySelector('.vacia');
    if(!top.length&&!v)list.before(el('div','vacia','Nadie en la cola todavía'));else if(top.length&&v)v.remove();
  }
